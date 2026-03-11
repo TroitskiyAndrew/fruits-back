@@ -20,20 +20,6 @@ const getUser = async (req, res) => {
   }
 };
 
-const saveVisitToCity = async (req, res) => {
-  try {
-    const { city, sessionId, event } = req.body;
-    const { user } = req.telegramData;
-    await userService.handleUser(user, { city, sessionId, event });
-    res.status(200).send(true);
-    return;
-  } catch (error) {
-    console.log(error)
-    res.status(500).send(error);
-    return;
-  }
-};
-
 const saveSource = async (req, res) => {
   try {
     const { source, sessionId } = req.body;
@@ -152,7 +138,6 @@ const sendMessage = async (req, res) => {
 
 module.exports = {
   getUser: getUser,
-  saveVisitToCity: saveVisitToCity,
   saveSource: saveSource,
   findUsers: findUsers,
   sendMessage: sendMessage,

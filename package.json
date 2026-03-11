@@ -1,5 +1,5 @@
 {
-  "name": "fruints-back",
+  "name": "fruits-back",
   "version": "1.0.0",
   "main": "start.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TroitskiyAndrew/fruints-back.git"
+    "url": "git+https://github.com/TroitskiyAndrew/fruits-back.git"
   },
   "author": "Andrei Troitskii",
   "license": "ISC",

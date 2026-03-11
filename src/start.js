@@ -78,22 +78,10 @@ app.post("/webhook", webhookController.handleWebhook);
 
 
 
-app.get("/cities", cityController.getCities);
-app.get("/places", placeController.getPlaces);
-app.get("/qr/:ticketId", ticketsController.getQR);
-app.post("/tickets", upload.single('image'), ticketsController.buyTickets);
-app.get("/tickets", ticketsController.getTickets);
-app.get("/booking/:bookingId", ticketsController.getTicketsByBooking);
-app.get("/ticket/:ticketId", ticketsController.getTicket);
-app.put("/ticket", ticketsController.changeTicketStatus);
-app.post("/cities", usersController.saveVisitToCity);
 app.get("/users/:userId", usersController.getUser);
 app.post("/users", usersController.saveSource);
 app.post("/path", usersController.savePath);
-app.get("/event/:eventId", eventsController.getEvent);
-app.get("/sales/:eventId", ticketsController.getSoldTickets);
-app.get("/find/:query", usersController.findUsers);
-app.post("/sell", ticketsController.sellTickets);
+
 app.post("/message", usersController.sendMessage);
 // app.post("/users", usersController.createUser);
 // app.put("/users", usersController.updateUser);
