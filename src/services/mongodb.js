@@ -40,7 +40,7 @@ const createDocument = async (collectionName, doc) => {
     try {
         await connectClient();
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
-        const res = await collection.insertOne(doc);
+        const res = await collection.insertOne({...doc, _created: Date.now()});
         const newDocument = await collection.findOne({ _id: res.insertedId });
         return newDocument ? mapDocumentFromMongo(newDocument) : null;
     } catch (err) {
@@ -56,7 +56,7 @@ const createDocuments = async (collectionName, docs) => {
         await connectClient();
         
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
-        const res = await collection.insertMany(docs);
+        const res = await collection.insertMany(docs.map(doc => ({...doc, _created: Date.now()})));
         // ToDo Получить айдишки созданных записей
         const insertedIds = [];
         

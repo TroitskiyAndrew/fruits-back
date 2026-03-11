@@ -42,7 +42,6 @@ const buyTickets = async (req, res) => {
       lastSource: sources[sources.length - 1] || '',
       path: dbUser?.path ?? [],
       sent: false,
-      _created: utils.getDate(Date.now() + 7 * 60 * 60 * 1000),
       discount: ticket.discount,
       checked: false
     }));
@@ -116,7 +115,6 @@ const sellTickets = async (req, res) => {
       path: fakeUser ? [] : dbUser?.path ?? [],
       
       sent: false,
-      _created: utils.getDate(Date.now() + 7 * 60 * 60 * 1000),
       discount: ticket.discount,
       checked,
     }));
