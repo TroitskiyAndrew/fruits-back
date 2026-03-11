@@ -86,7 +86,7 @@ const sendMessage = async (req, res) => {
       }
     ];
 
-    // const users = await dataService.aggregate('user', aggregation)
+    // const users = await dataService.aggregate('users', aggregation)
     // const ids = users.map(user => user.userId).filter(id => id !== 140779820);
     // console.log('ids', ids.length)
     // const success = [];

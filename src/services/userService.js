@@ -10,27 +10,27 @@ async function handleUser(user, options) {
     let save = false;
     if (user) {
         const userId = user.id;
-        dbUser = await dataService.getDocumentByQuery('user', { userId });
+        dbUser = await dataService.getDocumentByQuery('users', { userId });
         if (!dbUser) {
             if(!sessionId){
                 return;
             }
-            dbUser = await dataService.createDocument('user', { user, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+            dbUser = await dataService.createDocument('users', { user, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
         }
         if (sessionId) {
-            const userBySession = await dataService.getDocumentByQuery('user', { sessionId, userId: 0 });
+            const userBySession = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
             if (userBySession?.sessionId) {
                 save = true;
                 dbUser.source = userBySession.source || dbUser.source;
                 dbUser.sessionId = sessionId;
                 dbUser.path = [...dbUser.path, ...userBySession.path];
-                await dataService.deleteDocumentsByQuery('user', { sessionId, userId: 0 });
+                await dataService.deleteDocumentsByQuery('users', { sessionId, userId: 0 });
             }
         }
     } else if(sessionId) {
-        dbUser = await dataService.getDocumentByQuery('user', { sessionId, userId: 0 });
+        dbUser = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
         if (!dbUser) {
-            dbUser = await dataService.createDocument('user', { user: {}, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+            dbUser = await dataService.createDocument('users', { user: {}, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
         }
     }
     if (source) {
@@ -70,7 +70,7 @@ async function handleUser(user, options) {
         dbUser.pressedStart = true;
     }
     if (save) {
-        await dataService.updateDocument('user', dbUser);
+        await dataService.updateDocument('users', dbUser);
     }
     } catch(error) {
         console.log(error)
@@ -78,7 +78,7 @@ async function handleUser(user, options) {
 }
 
 async function findUsers(query = '') {
-    const users = await dataService.getDocuments('user', {
+    const users = await dataService.getDocuments('users', {
         $or: [
             { "user.first_name": { $regex: query, $options: "i" } },
             { "user.last_name": { $regex: query, $options: "i" } },
@@ -99,8 +99,18 @@ async function findUsers(query = '') {
     });
 }
 
+async function makeReferral(userId) {
+   try {
+     await dataService.updateDocumentByQuery('users', {userId}, {$set: {referral: true}});
+     return true
+   } catch (error) {
+    return false;
+   }
+}
+
 
 module.exports = {
     handleUser: handleUser,
     findUsers: findUsers,
+    makeReferral: makeReferral,
 };
