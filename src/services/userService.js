@@ -1,0 +1,106 @@
+
+const dataService = require("./mongodb");
+const utils = require("../services/utils");
+
+async function handleUser(user, options) {
+    try {
+    let { city, pressedStart, source, sessionId, event, pathPoint } = options;
+    source = source === 'tour' ? '@sverlovsk' : source;
+    let dbUser;
+    let save = false;
+    if (user) {
+        const userId = user.id;
+        dbUser = await dataService.getDocumentByQuery('user', { userId });
+        if (!dbUser) {
+            if(!sessionId){
+                return;
+            }
+            dbUser = await dataService.createDocument('user', { user, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId, _created: utils.getDate(Date.now() + 7 * 60 * 60 * 1000) })
+        }
+        if (sessionId) {
+            const userBySession = await dataService.getDocumentByQuery('user', { sessionId, userId: 0 });
+            if (userBySession?.sessionId) {
+                save = true;
+                dbUser.source = userBySession.source || dbUser.source;
+                dbUser.sessionId = sessionId;
+                dbUser.path = [...dbUser.path, ...userBySession.path];
+                await dataService.deleteDocumentsByQuery('user', { sessionId, userId: 0 });
+            }
+        }
+    } else if(sessionId) {
+        dbUser = await dataService.getDocumentByQuery('user', { sessionId, userId: 0 });
+        if (!dbUser) {
+            dbUser = await dataService.createDocument('user', { user: {}, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId, _created: utils.getDate(Date.now() + 7 * 60 * 60 * 1000) })
+        }
+    }
+    if (source) {
+        save = true;
+        const lastPoint = dbUser.path[dbUser.path.length -1];
+        if(source !== lastPoint){
+            dbUser.path.push(source);
+        }
+        const lastSource = dbUser.sources[dbUser.sources.length -1];
+        if(source !== lastSource){
+            dbUser.sources.push(source);
+        }
+        if (!dbUser.source){
+            dbUser.source = source
+        }
+    }
+    if (pathPoint) {
+        save = true;
+        const lastPoint = dbUser.path[dbUser.path.length -1];
+        if(pathPoint !== lastPoint){
+            dbUser.path.push(pathPoint);
+        }
+    }
+    if (city && !dbUser.visits.includes(city)) {
+        save = true;
+        dbUser.visits.push(city)
+    }
+    if(event){
+        const lastPoint = dbUser.path[dbUser.path.length -1];
+        save = true;
+        if(event !== lastPoint){
+            dbUser.path.push(event);
+        }
+    }
+    if (pressedStart && !dbUser.pressedStart) {
+        save = true;
+        dbUser.pressedStart = true;
+    }
+    if (save) {
+        await dataService.updateDocument('user', dbUser);
+    }
+    } catch(error) {
+        console.log(error)
+    } 
+}
+
+async function findUsers(query = '') {
+    const users = await dataService.getDocuments('user', {
+        $or: [
+            { "user.first_name": { $regex: query, $options: "i" } },
+            { "user.last_name": { $regex: query, $options: "i" } },
+            { "user.username": { $regex: query, $options: "i" } }
+        ]
+    });
+
+    return (users || []).map(user => {
+        const hasName = user.user.first_name || user.user.last_name;
+        let name = hasName ? [user.user.first_name, user.user.last_name].filter(Boolean).join(' ') : '';
+        if (user.user.username) {
+            name += name ? '(' + user.user.username + ')' : user.user.username;
+        }
+        return {
+            name,
+            userId: user.userId
+        }
+    });
+}
+
+
+module.exports = {
+    handleUser: handleUser,
+    findUsers: findUsers,
+};

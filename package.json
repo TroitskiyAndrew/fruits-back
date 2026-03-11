@@ -1,0 +1,33 @@
+{
+  "name": "fruints-back",
+  "version": "1.0.0",
+  "main": "start.js",
+  "scripts": {
+    "start": "node ./src/start.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TroitskiyAndrew/fruints-back.git"
+  },
+  "author": "Andrei Troitskii",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TroitskiyAndrew/tickets-back/issues"
+  },
+  "homepage": "https://github.com/TroitskiyAndrew/tickets-back#readme",
+  "description": "",
+  "dependencies": {
+    "@telegram-apps/init-data-node": "^2.0.10",
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "form-data": "^4.0.5",
+    "mongodb": "^6.14.1",
+    "multer": "^2.0.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1"
+  }
+}
