@@ -1,11 +1,6 @@
-const dataService = require("../services/mongodb");
+
 const { ObjectId } = require("mongodb");
-const userService = require("../services/userService");
-const sharesService = require("../services/sharesService");
-const roomsService = require("../services/roomsService");
-const ticketsService = require("../services/ticketsService");
-const axios = require("axios");
-const config = require("../config/config");
+const ordersService = require("../services/ordersService");
 
 
 const getUser = async (req, res) => {

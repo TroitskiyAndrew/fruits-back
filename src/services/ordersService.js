@@ -9,9 +9,9 @@ const FormData = require("form-data");
 
 
 
-async function sendTickets(query, options = {}) {
+async function sendOrders(query, options = {}) {
     try {
-        const {marketing, sendTo} = options;
+        const {sendTo} = options;
         const tickets = await dataService.getDocuments('ticket', {...query, sent: false, confirmed: true});
         if (!tickets.length) {
             return;
@@ -57,5 +57,5 @@ async function sendTickets(query, options = {}) {
 }
 
 module.exports = {
-    sendTickets: sendTickets,
+    sendOrders: sendOrders,
 };

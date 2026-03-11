@@ -1,6 +1,7 @@
 const userService = require("../services/userService");
 const config = require("../config/config");
 const axios = require("axios");
+const ordersService = require("../services/ordersService");
 
 const stateMap = new Map()
 
@@ -19,14 +20,8 @@ const handleWebhook = async (req, res) => {
       switch (action) {
         case 'CONFIRM': {
           // const tickets = await dataService.getDocuments('ticket', { bookingId: value });
-          // await ticketsService.sendTickets({ bookingId: value });
+          await ordersService.sendOrders({ orderId: value });
           
-          break;
-        }
-        case 'MARKETING': {
-          // const tickets = await dataService.getDocuments('ticket', { bookingId: value });
-          // await ticketsService.sendTickets({ bookingId: value }, { marketing: true });
-
           break;
         }
         case 'WRONG': {
@@ -66,7 +61,7 @@ const handleWebhook = async (req, res) => {
         const now = Date.now();
         try {
           await userService.handleUser(message.from, { pressedStart: true });
-          // await ticketsService.sendTickets({ userId: message.from.id }, { marketing: true });
+          await ordersService.sendOrders({ userId: message.from.id });
           await axios.post(`${config.tgApiUrl}/sendPhoto`, {
             chat_id: message.chat.id,
             photo: config.bot,
