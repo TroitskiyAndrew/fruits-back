@@ -11,12 +11,13 @@ const FormData = require("form-data");
 
 async function createPayment(options) {
     try {
-        const { from, to, amount, orderId, type, payed = null, confirmed = false } = options;
+        const { from, to, amount, orderId, type, payed = null, confirmed = false, currency } = options;
         const payment = await dataService.createDocument('payments', { from, to, amount, payed: payed, confirmed, })
         await dataService.createDocument('shares', {
             paymentId: payment.id,
             orderId,
             amount,
+            currency,
             payed,
             confirmed,
             type,
@@ -63,6 +64,7 @@ async function pay(paymentId, amount, confirmed) {
                         paymentId: newPayment.id,
                         orderId: share.orderId,
                         amount: newShareAmount,
+                        currency: share.currency,
                         payed: null,
                         confirmed: false,
                         type: share.type,
