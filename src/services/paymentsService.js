@@ -11,13 +11,14 @@ const FormData = require("form-data");
 
 async function createPayment(options) {
     try {
-        const { from, to, amount, orderId, type, payed } = options;
-        const payment = await dataService.createDocument('payments', { from, to, amount, payed: payed || null })
+        const { from, to, amount, orderId, type, payed = null, confirmed = false } = options;
+        const payment = await dataService.createDocument('payments', { from, to, amount, payed: payed, confirmed, })
         await dataService.createDocument('shares', {
             paymentId: payment.id,
             orderId,
             amount,
-            payed: payed || null,
+            payed,
+            confirmed,
             type,
         })
         return payment;
@@ -27,7 +28,7 @@ async function createPayment(options) {
     }
 }
 
-async function confirmPayment(paymentId, amount) {
+async function pay(paymentId, amount, confirmed) {
     try {
         const payment = await dataService.getDocument('payments', paymentId);
         if (payment.payed || amount > payment.amount) {
@@ -37,6 +38,7 @@ async function confirmPayment(paymentId, amount) {
             const now = Date.now();
             payment.payed = now;
             payment.amount = amount;
+            payment.confirmed = confirmed;
             await dataService.updateDocument('payments', payment);
             await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: now } })
             return true;
@@ -49,17 +51,20 @@ async function confirmPayment(paymentId, amount) {
                 if (amount >= share.amount) {
                     amount -= share.amount
                     share.payed = now;
+                    payment.confirmed = confirmed;
                     await dataService.updateDocument('shares', share)
                 } else if (amount > 0) {
-                    share.payed = now;
                     const newShareAmount = share.amount - amount;
+                    share.payed = now;
                     share.amount = amount;
+                    payment.confirmed = confirmed;
                     await dataService.updateDocument('shares', share);
                     await dataService.createDocument('shares', {
                         paymentId: newPayment.id,
                         orderId: share.orderId,
                         amount: newShareAmount,
                         payed: null,
+                        confirmed: false,
                         type: share.type,
                     })
                 } else {
@@ -75,10 +80,21 @@ async function confirmPayment(paymentId, amount) {
         return null
     }
 }
+async function confirmPayment(paymentId) {
+    try {
+        await dataService.updateDocumentByQuery('payments', {_id: new ObjectId}, {$set: {confirmed: true}})
+        await dataService.updateDocumentsByQuery('shares', {paymentId}, {$set: {confirmed: true}})
+        return payment;
+    } catch (error) {
+        console.log(error)
+        return null
+    }
+}
 
 
 
 module.exports = {
     createPayment: createPayment,
+    pay: pay,
     confirmPayment: confirmPayment,
 };
