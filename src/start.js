@@ -8,7 +8,8 @@ const upload = multer({ dest: 'uploads/' });
 
 const config = require("./config/config");
 const usersController = require("./controllers/usersController");
-const eventsController = require("./controllers/eventsController");
+const ordersController = require("./controllers/ordersController");
+const productsController = require("./controllers/productsController");
 const userService = require("./services/userService");
 const ticketsController = require("./controllers/ticketsController");
 const placeController = require("./controllers/placeController");
@@ -33,8 +34,8 @@ const telegramInitDataMiddleware = async (req, res, next) => {
     //   return;
     if (!config.prod) {
       // ToDo для локального тестирования
-      req.telegramData = { user: { id: 111, first_name: 'Тестовый юзер' }, chat: null, params: {} }
-      await userService.handleUser(null, {sessionId: req.body.sessionId})
+      req.telegramData = { user: { id: 480144364, first_name: 'Тестовый юзер' }, chat: null, params: {} }
+      await userService.handleUser(req.telegramData.user, {sessionId: req.body.sessionId})
       next();
       return;
     }
@@ -79,17 +80,26 @@ app.post("/webhook", webhookController.handleWebhook);
 
 
 app.get("/users/:userId", usersController.getUser);
-app.post("/users", usersController.saveSource);
+app.post("/users", usersController.getUsers);
+app.post("/source", usersController.saveSource);
 app.post("/path", usersController.savePath);
+app.get("/find/:query", usersController.findUsers);
 
 app.post("/message", usersController.sendMessage);
-// app.post("/users", usersController.createUser);
-// app.put("/users", usersController.updateUser);
 
-// app.get("/members/:roomId", membersController.getMembers);
-// app.post("/members", membersController.createMember);
-// app.put("/members", membersController.updateMember);
-// app.put("/role", membersController.changeRole);
+
+
+app.get("/orders/:orderId", ordersController.getOrder);
+app.post("/orders", ordersController.createOrder);
+app.put("/orders/:orderId", ordersController.updateOrder);
+app.delete("/orders/:orderId", ordersController.deleteOrder);
+app.post("/all-orders", ordersController.getOrders);
+
+app.get("/products/:productId", productsController.getProduct);
+app.post("/products", productsController.createProduct);
+app.put("/products/:productId", productsController.updateProduct);
+app.delete("/products/:productId", productsController.deleteProduct);
+app.post("/all-products", productsController.getProducts);
 
 // app.get("/payments/:roomId", paymentsController.getPayments);
 // app.post("/payments", paymentsController.createPayment);

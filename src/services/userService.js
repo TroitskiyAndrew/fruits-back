@@ -1,80 +1,85 @@
 
 const dataService = require("./mongodb");
-const utils = require("../services/utils");
+const QRCode = require("qrcode");
+const FormData = require("form-data");
+const config = require("../config/config");
 
 async function handleUser(user, options) {
     try {
-    let { city, pressedStart, source, sessionId, event, pathPoint } = options;
-    source = source === 'tour' ? '@sverlovsk' : source;
-    let dbUser;
-    let save = false;
-    if (user) {
-        const userId = user.id;
-        dbUser = await dataService.getDocumentByQuery('users', { userId });
-        if (!dbUser) {
-            if(!sessionId){
-                return;
+        let { city, pressedStart, source, sessionId, event, pathPoint } = options;
+        source = source === 'tour' ? '@sverlovsk' : source;
+        let dbUser;
+        let save = false;
+        if (user) {
+            const userId = user.id;
+            dbUser = await dataService.getDocumentByQuery('users', { userId });
+            if (!dbUser) {
+                if (!sessionId) {
+                    return;
+                }
+                dbUser = await dataService.createDocument('users', { user, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
             }
-            dbUser = await dataService.createDocument('users', { user, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
-        }
-        if (sessionId) {
-            const userBySession = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
-            if (userBySession?.sessionId) {
-                save = true;
-                dbUser.source = userBySession.source || dbUser.source;
-                dbUser.sessionId = sessionId;
-                dbUser.path = [...dbUser.path, ...userBySession.path];
-                await dataService.deleteDocumentsByQuery('users', { sessionId, userId: 0 });
+            if (sessionId) {
+                const userBySession = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
+                if (userBySession?.sessionId) {
+                    save = true;
+                    dbUser.source = userBySession.source || dbUser.source;
+                    dbUser.sessionId = sessionId;
+                    dbUser.path = [...dbUser.path, ...userBySession.path];
+                    await dataService.deleteDocumentsByQuery('users', { sessionId, userId: 0 });
+                }
+            }
+        } else if (sessionId) {
+            dbUser = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
+            if (!dbUser) {
+                dbUser = await dataService.createDocument('users', { user: {}, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
             }
         }
-    } else if(sessionId) {
-        dbUser = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
-        if (!dbUser) {
-            dbUser = await dataService.createDocument('users', { user: {}, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+        if (source) {
+            save = true;
+            const lastPoint = dbUser.path[dbUser.path.length - 1];
+            if (source !== lastPoint) {
+                dbUser.path.push(source);
+            }
+            const lastSource = dbUser.sources[dbUser.sources.length - 1];
+            if (source !== lastSource) {
+                dbUser.sources.push(source);
+            }
+            if (!dbUser.source) {
+                dbUser.source = source
+            }
+            if(!dbUser.referral && Number(source)){
+              dbUser.referral = Number(source);
+            }
         }
-    }
-    if (source) {
-        save = true;
-        const lastPoint = dbUser.path[dbUser.path.length -1];
-        if(source !== lastPoint){
-            dbUser.path.push(source);
+        if (pathPoint) {
+            save = true;
+            const lastPoint = dbUser.path[dbUser.path.length - 1];
+            if (pathPoint !== lastPoint) {
+                dbUser.path.push(pathPoint);
+            }
         }
-        const lastSource = dbUser.sources[dbUser.sources.length -1];
-        if(source !== lastSource){
-            dbUser.sources.push(source);
+        if (city && !dbUser.visits.includes(city)) {
+            save = true;
+            dbUser.visits.push(city)
         }
-        if (!dbUser.source){
-            dbUser.source = source
+        if (event) {
+            const lastPoint = dbUser.path[dbUser.path.length - 1];
+            save = true;
+            if (event !== lastPoint) {
+                dbUser.path.push(event);
+            }
         }
-    }
-    if (pathPoint) {
-        save = true;
-        const lastPoint = dbUser.path[dbUser.path.length -1];
-        if(pathPoint !== lastPoint){
-            dbUser.path.push(pathPoint);
+        if (pressedStart && !dbUser.pressedStart) {
+            save = true;
+            dbUser.pressedStart = true;
         }
-    }
-    if (city && !dbUser.visits.includes(city)) {
-        save = true;
-        dbUser.visits.push(city)
-    }
-    if(event){
-        const lastPoint = dbUser.path[dbUser.path.length -1];
-        save = true;
-        if(event !== lastPoint){
-            dbUser.path.push(event);
+        if (save) {
+            await dataService.updateDocument('users', dbUser);
         }
-    }
-    if (pressedStart && !dbUser.pressedStart) {
-        save = true;
-        dbUser.pressedStart = true;
-    }
-    if (save) {
-        await dataService.updateDocument('users', dbUser);
-    }
-    } catch(error) {
+    } catch (error) {
         console.log(error)
-    } 
+    }
 }
 
 async function findUsers(query = '') {
@@ -100,13 +105,16 @@ async function findUsers(query = '') {
 }
 
 async function makeReferral(userId) {
-   try {
-     await dataService.updateDocumentByQuery('users', {userId}, {$set: {referral: true}});
-     return true
-   } catch (error) {
-    return false;
-   }
+    try {
+        await dataService.updateDocumentByQuery('users', { userId }, { $set: { referral: true } });
+        return true
+    } catch (error) {
+        return false;
+    }
 }
+
+
+
 
 
 module.exports = {

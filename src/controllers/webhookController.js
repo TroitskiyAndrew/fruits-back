@@ -19,29 +19,26 @@ const handleWebhook = async (req, res) => {
       const [action, value] = data.split('_SPLIT_');
       switch (action) {
         case 'CONFIRM': {
-          // const tickets = await dataService.getDocuments('ticket', { bookingId: value });
-          await ordersService.sendOrders({ orderId: value });
+          await ordersService.confirmOrder(value);
           
           break;
         }
         case 'WRONG': {
-          // const tickets = await dataService.getDocuments('ticket', { bookingId: value });
-          if (tickets.length) {
-            await axios.post(`${config.tgApiUrl}/sendMessage`, {
-              chat_id: tickets[0].userId,
+          const order = await ordersService.getOrder(value);
+          await axios.post(`${config.tgApiUrl}/sendMessage`, {
+              chat_id: order.userId,
               text: "Что-то не сошлось по сумме. Напишите сообщение, чтобы уточнить детали",
             });
-          }
           break;
         }
         case 'DROP': {
-          // const tickets = await dataService.getDocuments('ticket', { bookingId: value });
+          const order = await ordersService.getOrder(value);
           await axios.post(`${config.tgApiUrl}/sendMessage`, {
-            chat_id: tickets[0].userId,
+            chat_id: order.userId,
             text: "Менеджер не получил вашу оплату. Напишите сообщение, чтобы уточнить детали",
           });
           reply_markup.inline_keyboard = []
-          // await dataService.deleteDocumentsByQuery('ticket', { bookingId: value });
+          await ordersService.deleteOrder(value)
           break;
         }
         default:
@@ -62,10 +59,10 @@ const handleWebhook = async (req, res) => {
         try {
           await userService.handleUser(message.from, { pressedStart: true });
           await ordersService.sendOrders({ userId: message.from.id });
-          await axios.post(`${config.tgApiUrl}/sendPhoto`, {
+          await axios.post(`${config.tgApiUrl}/sendMessage`, {
             chat_id: message.chat.id,
             photo: config.bot,
-            caption: 'Жми на старт👇и хватай билеты на легендарные шоу любимого комика',
+            text: 'Запусти бота',
             reply_markup: {
               inline_keyboard: [
                 [

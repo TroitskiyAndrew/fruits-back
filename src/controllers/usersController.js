@@ -1,16 +1,30 @@
 
-const { ObjectId } = require("mongodb");
-const ordersService = require("../services/ordersService");
+const dataService = require("../services/mongodb");
+const userService = require("../services/userService");
+const QRCode = require("qrcode");
+const FormData = require("form-data");
+const config = require("../config/config");
 
 
 const getUser = async (req, res) => {
   try {
-    const user = await dataService.getDocumentByQuery("user", { userId: Number(req.params.userId) });
+    const user = await dataService.getDocumentByQuery("users", { userId: Number(req.params.userId) });
     res.status(200).send(user);
     return;
   } catch (error) {
     console.log(error)
     res.status(500).send(error);
+    return;
+  }
+};
+const getUsers = async (req, res) => {
+  try {
+    const users = await dataService.deleteDocumentsByQuery("users", req.body.query);
+    res.status(200).send(users);
+    return;
+  } catch (error) {
+    console.log(error)
+    res.status(500).send([]);
     return;
   }
 };
@@ -131,11 +145,32 @@ const sendMessage = async (req, res) => {
   }
 };
 
+
+const getUserQR = async (req, res) => {
+  try {
+    const link = `${config.qrUrlBase}${req.params.id}`;
+    const buffer = await QRCode.toBuffer(link, {
+      type: 'png',
+      width: 512,
+      margin: 2,
+    });
+    res.type("png");
+    res.send(buffer);
+    return;
+  } catch (error) {
+    console.log(error)
+    res.status(500).send(null);
+    return;
+  }
+};
+
 module.exports = {
   getUser: getUser,
+  getUsers: getUsers,
   saveSource: saveSource,
   findUsers: findUsers,
   sendMessage: sendMessage,
   savePath: savePath,
+  getUserQR: getUserQR,
 };
 
