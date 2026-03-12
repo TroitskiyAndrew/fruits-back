@@ -73,7 +73,8 @@ async function createOrder(order, file) {
         form.append('caption', `Заказ от ${userLink} на сумму ${newOrder.total}`);
         form.append('reply_markup', JSON.stringify({
             inline_keyboard: [
-                [{ text: "Подтвердить", callback_data: `CONFIRM_SPLIT_${newOrder.id}` }],
+                [{ text: "Подтвердить оплату", callback_data: `CONFIRM_PAYMENT_SPLIT_${newOrder.id}` }],
+                [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],
                 [{ text: "Неправильная сумма", callback_data: `WRONG_SPLIT_${newOrder.id}` }],
                 [{ text: "Деньги не поступили", callback_data: `DROP_SPLIT_${newOrder.id}` }]
             ]
