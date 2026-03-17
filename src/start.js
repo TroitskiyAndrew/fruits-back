@@ -11,19 +11,12 @@ const usersController = require("./controllers/usersController");
 const ordersController = require("./controllers/ordersController");
 const productsController = require("./controllers/productsController");
 const userService = require("./services/userService");
-const ticketsController = require("./controllers/ticketsController");
-const placeController = require("./controllers/placeController");
 const webhookController = require("./controllers/webhookController");
-const socketService = require("./services/socketService");
-const citiesService = require("./services/citiesService");
-const cityController = require("./controllers/cityController");
-
 const MAX_AGE_SECONDS = 24 * 60 * 60; // 24 часа
 
 const app = express();
 const server = http.createServer(app);
 
-socketService.initSocket(server)
 
 const telegramInitDataMiddleware = async (req, res, next) => {
   try {

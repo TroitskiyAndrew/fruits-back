@@ -1,10 +1,5 @@
 const { ObjectId } = require("mongodb");
 const dataService = require("./mongodb");
-const eventsService = require("./eventsService");
-const axios = require("axios");
-const config = require("../config/config");
-const QRCode = require("qrcode");
-const FormData = require("form-data");
 
 
 
@@ -43,11 +38,11 @@ async function createProduct(product) {
 
 async function updateProduct(product) {
     try {
-        await dataService.updateDocument('products', product);
-        return true;
+        const updatedProduct = await dataService.updateDocument('products', product);
+        return updatedProduct;
     } catch (error) {
         console.log(error)
-        return false
+        return null
     }
 }
 
@@ -61,7 +56,6 @@ async function deleteProduct(productId) {
         return false
     }
 }
-
 
 
 module.exports = {

@@ -19,7 +19,7 @@ const getProduct = async (req, res) => {
 };
 const getProducts = async (req, res) => {
   try {
-    const products = await dataService.deleteDocumentsByQuery("products", req.body.query);
+    const products = await dataService.getDocuments("products", req.body.query);
     res.status(200).send(products);
     return;
   } catch (error) {
@@ -42,12 +42,12 @@ const createProduct = async (req, res) => {
 };
 const updateProduct = async (req, res) => {
   try {
-    await productsService.updateProduct(req.body.product);
-    res.status(200).send(products);
+    const updatedProduct = await productsService.updateProduct(req.body.product);
+    res.status(200).send(updatedProduct);
     return;
   } catch (error) {
     console.log(error)
-    res.status(500).send([]);
+    res.status(500).send(null);
     return;
   }
 };
@@ -74,8 +74,3 @@ module.exports = {
   deleteProduct: deleteProduct,
 };
 
-app.get("/products/:productId", productsController.getProduct);
-app.post("/products", productsController.createProduct);
-app.put("/products/:productId", productsController.updateProduct);
-app.delete("/products/:productId", productsController.deleteProduct);
-app.post("/all-products", productsController.getProducts);

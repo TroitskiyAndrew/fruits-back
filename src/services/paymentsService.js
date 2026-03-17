@@ -1,10 +1,5 @@
 const { ObjectId } = require("mongodb");
 const dataService = require("./mongodb");
-const eventsService = require("./eventsService");
-const axios = require("axios");
-const config = require("../config/config");
-const QRCode = require("qrcode");
-const FormData = require("form-data");
 
 
 
