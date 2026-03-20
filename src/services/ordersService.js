@@ -53,7 +53,7 @@ async function getOrder(orderId) {
         return null
     }
 }
-s
+
 async function createOrder(order, file) {
     try {
         const counter = await dataService.findOneAndUpdate('counters', { collection: 'orders' },
