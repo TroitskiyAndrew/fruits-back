@@ -15,11 +15,11 @@ let timeoutId;
 
 async function connectClient() {
     clearTimeout(timeoutId);
-    if(!connectionOpened){
+    if (!connectionOpened) {
         await client.connect();
         connectionOpened = true;
         console.log("Connection opened", connectionOpened);
-    }    
+    }
     timeoutId = setTimeout(() => {
         client.close();
         console.log("Connection closed");
@@ -40,7 +40,7 @@ const createDocument = async (collectionName, doc) => {
     try {
         await connectClient();
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
-        const res = await collection.insertOne({...doc, _created: Date.now()});
+        const res = await collection.insertOne({ ...doc, _created: Date.now() });
         const newDocument = await collection.findOne({ _id: res.insertedId });
         return newDocument ? mapDocumentFromMongo(newDocument) : null;
     } catch (err) {
@@ -54,12 +54,12 @@ const createDocuments = async (collectionName, docs) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
-        const res = await collection.insertMany(docs.map(doc => ({...doc, _created: Date.now()})));
+        const res = await collection.insertMany(docs.map(doc => ({ ...doc, _created: Date.now() })));
         // ToDo Получить айдишки созданных записей
         const insertedIds = [];
-        
+
         const newDocuments = await collection.find({ _id: { $in: insertedIds } }).toArray();
         result = newDocuments.map(mapDocumentFromMongo);
     } catch (err) {
@@ -73,7 +73,7 @@ const getDocuments = async (collectionName, query) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
 
         const res = await collection.find(query).toArray();
@@ -89,7 +89,7 @@ const getDocument = async (collectionName, id) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
         const doc = await collection.findOne({ _id: new ObjectId(id) });
         result = doc ? mapDocumentFromMongo(doc) : null;
@@ -104,7 +104,7 @@ const getDocumentByQuery = async (collectionName, query) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
         const doc = await collection.findOne(query);
         result = doc ? mapDocumentFromMongo(doc) : null;
@@ -118,7 +118,7 @@ const getDocumentByQuery = async (collectionName, query) => {
 const updateDocument = async (collectionName, doc) => {
     let result;
     try {
-        await connectClient();        
+        await connectClient();
         const { id, ...rest } = doc;
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
         await collection.updateOne({ _id: new ObjectId(id) }, { $set: rest });
@@ -127,7 +127,7 @@ const updateDocument = async (collectionName, doc) => {
     } catch (err) {
         console.log('Operation updateDocument failed', err);
         result = false;
-    } 
+    }
     return result;
 }
 
@@ -142,7 +142,7 @@ const updateDocumentByQuery = async (collectionName, query, update) => {
     } catch (err) {
         console.log('Operation updateDocument failed', err);
         result = false;
-    } 
+    }
     return result;
 }
 
@@ -150,7 +150,7 @@ const updateDocuments = async (collectionName, query, update) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
         await collection.updateMany(query, update);
         const updatedDocuments = await collection.find(query).toArray();
@@ -158,7 +158,7 @@ const updateDocuments = async (collectionName, query, update) => {
     } catch (err) {
         console.log('Operation updateDocuments failed', err);
         result = false;
-    } 
+    }
     return result;
 }
 
@@ -166,9 +166,9 @@ const updateDocumentsByQuery = async (collectionName, updates) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
-        
+
         const bulkOps = updates.map(({ id, updateQuery }) => ({
             updateOne: {
                 filter: { _id: new ObjectId(id) },
@@ -177,12 +177,12 @@ const updateDocumentsByQuery = async (collectionName, updates) => {
         }));
 
         await collection.bulkWrite(bulkOps);
-        const updatedDocuments = await collection.find({_id: {$in: updates.map(id => new ObjectId(id))}}).toArray();
+        const updatedDocuments = await collection.find({ _id: { $in: updates.map(id => new ObjectId(id)) } }).toArray();
         result = updatedDocuments.map(mapDocumentFromMongo);
     } catch (err) {
         console.log('Operation updateDocuments failed', err);
         result = false;
-    } 
+    }
     return result;
 }
 
@@ -190,14 +190,14 @@ const deleteDocument = async (collectionName, id) => {
     let result;
     try {
         await connectClient();
-        
+
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
         await collection.deleteOne({ _id: new ObjectId(id) });
         result = true;
     } catch (err) {
         console.log('Operation updateDocuments failed', err);
         result = null;
-    } 
+    }
     return result;
 }
 const deleteDocumentByQuery = async (collectionName, query) => {
@@ -210,7 +210,7 @@ const deleteDocumentByQuery = async (collectionName, query) => {
     } catch (err) {
         console.log('Operation updateDocuments failed', err);
         result = null;
-    } 
+    }
     return result;
 }
 
@@ -224,7 +224,7 @@ const deleteDocumentsByQuery = async (collectionName, query) => {
     } catch (err) {
         console.log('Operation updateDocuments failed', err);
         result = null;
-    } 
+    }
     return result;
 }
 
@@ -238,7 +238,20 @@ const aggregate = async (collectionName, query) => {
     } catch (err) {
         console.log('Operation aggregate failed', err);
         result = null;
-    } 
+    }
+    return result;
+}
+
+const findOneAndUpdate = async (collectionName, options) => {
+    let result;
+    try {
+        await connectClient();
+        const collection = client.db(config.mongodbDatabase).collection(collectionName);
+        result = await collection.findOneAndUpdate(options)
+    } catch (err) {
+        console.log('Operation aggregate failed', err);
+        result = null;
+    }
     return result;
 }
 
@@ -256,6 +269,7 @@ module.exports = {
     updateDocumentByQuery: updateDocumentByQuery,
     updateDocumentsByQuery: updateDocumentsByQuery,
     aggregate: aggregate,
+    findOneAndUpdate: findOneAndUpdate,
 };
 
 process.on('exit', () => {

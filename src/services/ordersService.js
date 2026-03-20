@@ -53,10 +53,14 @@ async function getOrder(orderId) {
         return null
     }
 }
-
+s
 async function createOrder(order, file) {
     try {
-        const newOrder = await dataService.createDocument('orders', { ...order, sent: false });
+        const counter = await dataService.findOneAndUpdate('counters', { collection: 'orders' },
+            { $inc: { seq: 1 } },
+            { returnDocument: 'after', upsert: true })
+
+        const newOrder = await dataService.createDocument('orders', { ...order, sent: false, number: counter.value.seq });
         await paymentsService.createPayment({ from: order.userId, to: config.cashier, amount: order.total, orderId: newOrder.id, type: 0 });
 
         const dbUser = await dataService.getDocumentByQuery('users', { userId: newOrder.userId });
