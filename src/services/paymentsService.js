@@ -6,15 +6,12 @@ const dataService = require("./mongodb");
 
 async function createPayment(options) {
     try {
-        const { from, to, amount, orderId, type, payed = null, confirmed = false, currency } = options;
-        const payment = await dataService.createDocument('payments', { from, to, amount, payed: payed, confirmed, })
+        const { from, to, amount, amounts, orderId, type, payed = null, confirmed = null, currency, method } = options;
+        const payment = await dataService.createDocument('payments', { from, to, amount, amounts, currency, payed, confirmed, method})
         await dataService.createDocument('shares', {
             paymentId: payment.id,
             orderId,
-            amount,
-            currency,
-            payed,
-            confirmed,
+            amounts,
             type,
         })
         return payment;
@@ -24,51 +21,52 @@ async function createPayment(options) {
     }
 }
 
-async function pay(paymentId, amount, confirmed) {
+async function pay(options) {
     try {
-        const payment = await dataService.getDocument('payments', paymentId);
-        if (payment.payed || amount > payment.amount) {
+        const {paymentId, amount, currency, when} = options
+        let payment = await dataService.getDocument('payments', paymentId);
+        
+        if (payment.payed || payment.amounts[currency] !== amount) {
             return false;
         }
-        if (amount >= payment.amount) {
-            const now = Date.now();
-            payment.payed = now;
-            payment.amount = amount;
-            payment.confirmed = confirmed;
+        if(payment.currency !== currency){
+            payment.currency = currency;
+            payment.amount = payment.amounts[currency];
+            payment = await dataService.updateDocument('payments', payment)
+        }
+        
+        if (amount === payment.amount) {
+            payment.payed = when;
             await dataService.updateDocument('payments', payment);
-            await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: now } })
             return true;
         } else {
-            payment.payed = now;
-            const newPayment = await dataService.createDocument('payments', { from: payment.from, to: payment.to, amount: payment.amount - amount, payed: null })
-            payment.amount = amount;
-            const shares = await dataService.getDocuments('shares', { paymentId });
-            for (const share of shares) {
-                if (amount >= share.amount) {
-                    amount -= share.amount
-                    share.payed = now;
-                    payment.confirmed = confirmed;
-                    await dataService.updateDocument('shares', share)
-                } else if (amount > 0) {
-                    const newShareAmount = share.amount - amount;
-                    share.payed = now;
-                    share.amount = amount;
-                    payment.confirmed = confirmed;
-                    await dataService.updateDocument('shares', share);
-                    await dataService.createDocument('shares', {
-                        paymentId: newPayment.id,
-                        orderId: share.orderId,
-                        amount: newShareAmount,
-                        currency: share.currency,
-                        payed: null,
-                        confirmed: false,
-                        type: share.type,
-                    })
-                } else {
-                    share.paymentId = newPayment.id;
-                    await dataService.updateDocument('shares', share);
-                }
-            }
+            // payment.payed = when;
+            // const partSize = Math.round(((amount / payment.amounts[currency]) + Number.EPSILON) * 100) / 100;
+            
+            // const newPayment = await dataService.createDocument('payments', { from: payment.from, to: payment.to, amount: payment.amount - amount, payed: null })
+            // payment.amount = amount;
+            // const shares = await dataService.getDocuments('shares', { paymentId });
+            // for (const share of shares) {
+            //     if (amount >= share.amounts[currency]) {
+            //         amount -= share.amounts[currency]
+            //         await dataService.updateDocument('shares', share)
+            //     } else if (amount > 0) {
+            //         const newShareAmount = share.amounts[currency] - amount;
+            //         share.amount = amount;
+            //         await dataService.updateDocument('shares', share);
+            //         await dataService.createDocument('shares', {
+            //             paymentId: newPayment.id,
+            //             orderId: share.orderId,
+            //             amount: newShareAmount,
+            //             currency: share.currency,
+            //             payed: null,
+            //             type: share.type,
+            //         })
+            //     } else {
+            //         share.paymentId = newPayment.id;
+            //         await dataService.updateDocument('shares', share);
+            //     }
+            // }
         }
 
         return payment;
@@ -77,10 +75,9 @@ async function pay(paymentId, amount, confirmed) {
         return null
     }
 }
-async function confirmPayment(paymentId) {
+async function confirmPayment(paymentId, when) {
     try {
-        await dataService.updateDocumentByQuery('payments', {_id: new ObjectId}, {$set: {confirmed: true}})
-        await dataService.updateDocumentsByQuery('shares', {paymentId}, {$set: {confirmed: true}})
+        await dataService.updateDocumentByQuery('payments', {_id: new ObjectId(paymentId)}, {$set: {confirmed: when}})
         return payment;
     } catch (error) {
         console.log(error)

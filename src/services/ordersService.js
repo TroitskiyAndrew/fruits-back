@@ -12,8 +12,8 @@ const FormData = require("form-data");
 async function sendOrders(query, options = {}) {
     try {
         const { sendTo } = options;
-        const tickets = await dataService.getDocuments('orders', { ...query, sent: false, confirmed: true });
-        if (!tickets.length) {
+        const orders = await dataService.getDocuments('orders', { ...query, 'state.sent': false });
+        if (!orders.length) {
             return;
         }
         const congratsText = "Ваш заказ подтвержден"
@@ -23,7 +23,7 @@ async function sendOrders(query, options = {}) {
                 text: congratsText,
             });
         }
-        await dataService.updateDocuments('orders', { ...query, sent: false, confirmed: true }, { $set: { sent: true } });
+        await dataService.updateDocuments('orders', { ...query, 'state.sent': false }, { $set: { 'state.sent': true } });
         return true;
 
     } catch (error) {
@@ -54,36 +54,32 @@ async function getOrder(orderId) {
     }
 }
 
-async function createOrder(order, file) {
+async function createOrder(order, method) {
     try {
         const counter = await dataService.findOneAndUpdate('counters', { collection: 'orders' },
             { $inc: { seq: 1 } },
             { returnDocument: 'after', upsert: true })
 
-        const newOrder = await dataService.createDocument('orders', { ...order, sent: false, number: counter.value.seq });
-        await paymentsService.createPayment({ from: order.userId, to: config.cashier, amount: order.total, orderId: newOrder.id, type: 0 });
+        const newOrder = await dataService.createDocument('orders', { ...order, number: counter.value.seq });
+        const currency = newOrder.content.currency;
+        const total = newOrder.content.prices[currency]
+        await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 0, method });
 
         const dbUser = await dataService.getDocumentByQuery('users', { userId: newOrder.userId });
         const form = new FormData();
         form.append('chat_id', config.cashier);
         form.append('parse_mode', 'HTML');
-        if (file) {
-            form.append('photo', fs.createReadStream(file.path));
-        } else {
-            form.append('photo', 'https://www.dropbox.com/scl/fi/gll6m7uuzwi37cb6379bl/zhdun.jpg?rlkey=xmm48wmk0ri4ckudm5bde23ez&raw=1');
-        }
         const userLink = `<a href="https://t.me/${dbUser.username}">${dbUser.first_name || dbUser.username || 'Пользователь'}</a>`;
 
-        form.append('caption', `Заказ от ${userLink} на сумму ${newOrder.total}`);
+        form.append('text', `Заказ от ${userLink} на сумму ${newOrder.total}`);
         form.append('reply_markup', JSON.stringify({
             inline_keyboard: [
-                [{ text: "Подтвердить оплату", callback_data: `CONFIRM_PAYMENT_SPLIT_${newOrder.id}` }],
                 [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],
-                [{ text: "Неправильная сумма", callback_data: `WRONG_SPLIT_${newOrder.id}` }],
-                [{ text: "Деньги не поступили", callback_data: `DROP_SPLIT_${newOrder.id}` }]
+                [{ text: "Отменить заказ", callback_data: `DROP_ORDER_SPLIT_${newOrder.id}` }],
+                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },]
             ]
         }));
-        await axios.post(`${config.tgApiUrl}/sendPhoto`, form,
+        await axios.post(`${config.tgApiUrl}/sendMessage`, form,
             { headers: form.getHeaders() });
 
 
@@ -97,23 +93,12 @@ async function createOrder(order, file) {
 async function confirmOrder(orderId) {
     try {
         const _id = new ObjectId(orderId)
-        await dataService.updateDocumentByQuery('orders', { _id }, { $ser: { confirmed: true } });
+        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': true } });
         await sendOrders({ _id })
         return order;
     } catch (error) {
         console.log(error)
         return null
-    }
-}
-
-async function confirmPayment(orderId, amount) {
-    try {
-        const share = await dataService.getDocumentByQuery('shares', { orderId, type: 0, payed: null })
-        await paymentsService.confirmPayment(share.paymentId, amount)
-        return true;
-    } catch (error) {
-        console.log(error)
-        return false;
     }
 }
 
@@ -132,10 +117,10 @@ async function updateOrder(order) {
 async function deleteOrder(orderId) {
     try {
         const order = await dataService.getDocument('orders', orderId);
-        if (order.confirmed) {
+        if (order.state.confirmed) {
             return false
         }
-        order.deleted = true;
+        order.state.deleted = true;
         await dataService.updateDocument('orders', order);
         return true;
     } catch (error) {
@@ -152,5 +137,4 @@ module.exports = {
     confirmOrder: confirmOrder,
     updateOrder: updateOrder,
     deleteOrder: deleteOrder,
-    confirmPayment: confirmPayment,
 };
