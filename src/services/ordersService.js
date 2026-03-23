@@ -60,7 +60,7 @@ async function createOrder(order, method) {
             { $inc: { seq: 1 } },
             { returnDocument: 'after', upsert: true })
 
-        const newOrder = await dataService.createDocument('orders', { ...order, number: counter.value.seq });
+        const newOrder = await dataService.createDocument('orders', { ...order, number: counter.seq });
         const currency = newOrder.content.currency;
         const total = newOrder.content.prices[currency]
         await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 0, method });

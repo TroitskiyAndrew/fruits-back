@@ -242,12 +242,12 @@ const aggregate = async (collectionName, query) => {
     return result;
 }
 
-const findOneAndUpdate = async (collectionName, options) => {
+const findOneAndUpdate = async (collectionName, ...options) => {
     let result;
     try {
         await connectClient();
         const collection = client.db(config.mongodbDatabase).collection(collectionName);
-        result = await collection.findOneAndUpdate(options)
+        result = await collection.findOneAndUpdate(...options);
     } catch (err) {
         console.log('Operation aggregate failed', err);
         result = null;
