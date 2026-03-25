@@ -71,7 +71,7 @@ async function createOrder(order, method) {
         form.append('parse_mode', 'HTML');
         const userLink = `<a href="https://t.me/${dbUser.username}">${dbUser.first_name || dbUser.username || 'Пользователь'}</a>`;
 
-        form.append('text', `Заказ от ${userLink} на сумму ${newOrder.total}`);
+        form.append('text', `Заказ от ${userLink} на сумму ${total}`);
         form.append('reply_markup', JSON.stringify({
             inline_keyboard: [
                 [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],

@@ -9,10 +9,13 @@ async function createPayment(options) {
         const { from, to, amount, amounts, orderId, type, payed = null, confirmed = null, currency, method } = options;
         const payment = await dataService.createDocument('payments', { from, to, amount, amounts, currency, payed, confirmed, method})
         await dataService.createDocument('shares', {
+            from, 
+            to,
             paymentId: payment.id,
             orderId,
             amounts,
             type,
+            payed,
         })
         return payment;
     } catch (error) {
@@ -32,12 +35,12 @@ async function pay(options) {
         if(payment.currency !== currency){
             payment.currency = currency;
             payment.amount = payment.amounts[currency];
-            payment = await dataService.updateDocument('payments', payment)
         }
         
         if (amount === payment.amount) {
             payment.payed = when;
             await dataService.updateDocument('payments', payment);
+            await dataService.updateDocuments('shares', {paymentId}, {$set: {payed: when }})
             return true;
         } else {
             // payment.payed = when;
