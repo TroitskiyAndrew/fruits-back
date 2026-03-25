@@ -10,6 +10,7 @@ const config = require("./config/config");
 const usersController = require("./controllers/usersController");
 const ordersController = require("./controllers/ordersController");
 const productsController = require("./controllers/productsController");
+const paymentsController = require("./controllers/paymentsController");
 const userService = require("./services/userService");
 const webhookController = require("./controllers/webhookController");
 const MAX_AGE_SECONDS = 24 * 60 * 60; // 24 часа
@@ -81,7 +82,6 @@ app.get("/find/:query", usersController.findUsers);
 app.post("/message", usersController.sendMessage);
 
 
-
 app.get("/orders/:orderId", ordersController.getOrder);
 app.post("/orders", ordersController.createOrder);
 app.put("/orders/:orderId", ordersController.updateOrder);
@@ -93,6 +93,8 @@ app.post("/products", productsController.createProduct);
 app.put("/products/:productId", productsController.updateProduct);
 app.delete("/products/:productId", productsController.deleteProduct);
 app.post("/all-products", productsController.getProducts);
+
+app.post("/pay", paymentsController.pay);
 
 // app.get("/payments/:roomId", paymentsController.getPayments);
 // app.post("/payments", paymentsController.createPayment);

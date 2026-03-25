@@ -63,7 +63,7 @@ async function createOrder(order, method) {
         const newOrder = await dataService.createDocument('orders', { ...order, number: counter.seq });
         const currency = newOrder.content.currency;
         const total = newOrder.content.prices[currency]
-        await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 0, method });
+        await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 1, method });
 
         const dbUser = await dataService.getDocumentByQuery('users', { userId: newOrder.userId });
         const form = new FormData();
@@ -82,6 +82,18 @@ async function createOrder(order, method) {
         await axios.post(`${config.tgApiUrl}/sendMessage`, form,
             { headers: form.getHeaders() });
 
+
+        const form2 = new FormData();
+        form2.append('chat_id', newOrder.userId);
+        form2.append('parse_mode', 'HTML');
+        form.append('text', `Ваш заказ принят в обработку`);
+        form2.append('reply_markup', JSON.stringify({
+            inline_keyboard: [
+                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },],
+            ]
+        }));
+        await axios.post(`${config.tgApiUrl}/sendMessage`, form2,
+            { headers: form.getHeaders() });
 
         return newOrder;
     } catch (error) {
