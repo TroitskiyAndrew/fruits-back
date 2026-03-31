@@ -31,8 +31,8 @@ const getOrders = async (req, res) => {
 
 const createOrder = async (req, res) => {
   try {
-    const order = await ordersService.createOrder(req.body.order, req.body.method);
-    res.status(200).send(order);
+    const {order, payment} = await ordersService.createOrder(req.body.order, req.body.method);
+    res.status(200).send({order, payment});
     return;
   } catch (error) {
     console.log(error)

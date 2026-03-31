@@ -63,7 +63,7 @@ async function createOrder(order, method) {
         const newOrder = await dataService.createDocument('orders', { ...order, number: counter.seq });
         const currency = newOrder.content.currency;
         const total = newOrder.content.prices[currency]
-        await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 1, method });
+        const payment = await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 1, method });
 
         const dbUser = await dataService.getDocumentByQuery('users', { userId: newOrder.userId });
         const form = new FormData();
@@ -95,7 +95,7 @@ async function createOrder(order, method) {
         await axios.post(`${config.tgApiUrl}/sendMessage`, form2,
             { headers: form.getHeaders() });
 
-        return newOrder;
+        return {order: newOrder, payment};
     } catch (error) {
         console.log(error)
         return null

@@ -118,8 +118,6 @@ async function confirmPayment(paymentId, when) {
     }
 }
 
-
-
 module.exports = {
     createPayment: createPayment,
     pay: pay,
