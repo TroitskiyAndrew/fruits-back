@@ -1,4 +1,5 @@
 const userService = require("../services/userService");
+const configService = require("../services/configService");
 const config = require("../config/config");
 const axios = require("axios");
 const ordersService = require("../services/ordersService");
@@ -79,11 +80,11 @@ const handleWebhook = async (req, res) => {
         const userLink = `<a href="https://t.me/${user.username}">${user.first_name || user.username || 'Пользователь'}</a>`;
 
         await telegrammService.sendMessage({
-            to: config.cashier,
+            to: configService.getCashierId(),
             text: `Сообщение от ${userLink}`,
           })
         await axios.post(`${config.tgApiUrl}/forwardMessage`, {
-          chat_id: config.cashier,
+          chat_id: configService.getCashierId(),
           from_chat_id: message.chat.id,
           message_id: message.message_id
         });

@@ -7,6 +7,7 @@ const  { parse, isValid } = require("@telegram-apps/init-data-node");
 const upload = multer();
 
 const config = require("./config/config");
+const configController = require("./controllers/configController");
 const usersController = require("./controllers/usersController");
 const ordersController = require("./controllers/ordersController");
 const productsController = require("./controllers/productsController");
@@ -71,13 +72,16 @@ app.use(cors({ origin: config.frontURL, credentials: true }));
 app.use(telegramInitDataMiddleware);
 app.post("/webhook", webhookController.handleWebhook);
 
+app.get("/config", configController.getConfig);
 
 
 app.get("/users/:userId", usersController.getUser);
 app.post("/users", usersController.getUsers);
+app.put("/users/:userId", usersController.updateUser);
 app.post("/source", usersController.saveSource);
 app.post("/path", usersController.savePath);
 app.get("/find/:query", usersController.findUsers);
+app.get("/qr/:id", usersController.getUserQR);
 
 app.post("/message", usersController.sendMessage);
 

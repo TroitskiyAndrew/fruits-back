@@ -2,6 +2,7 @@ const { ObjectId } = require("mongodb");
 const dataService = require("./mongodb");
 const paymentsService = require("./paymentsService");
 const telegrammService = require("./telegrammService");
+const configService = require("./configService");
 const axios = require("axios");
 const config = require("../config/config");
 const QRCode = require("qrcode");
@@ -64,12 +65,12 @@ async function createOrder(order, method) {
         const newOrder = await dataService.createDocument('orders', { ...order, number: counter.seq });
         const currency = newOrder.content.currency;
         const total = newOrder.content.prices[currency]
-        const payment = await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 1, method });
+        const payment = await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: configService.getCashierId(), amount: total, amounts: newOrder.content.prices, currency, type: 1, method });
 
         const dbUser = await dataService.getDocumentByQuery('users', { userId: newOrder.userId });
         const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
         await telegrammService.sendMessage({
-            to: config.cashier,
+            to: configService.getCashierId(),
             text: `Заказ от ${userLink} на сумму ${total}`,
             buttons: [
                 [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],
@@ -108,7 +109,7 @@ async function updateOrder(order) {
     try {
         const { id, ...rest } = order;
         const _id = new ObjectId(id);
-        await dataService.updateDocumentByQuery('orders', { _id }, { $ser: { ...rest } });
+        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { ...rest } });
         return order;
     } catch (error) {
         console.log(error)

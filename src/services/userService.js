@@ -3,6 +3,7 @@ const dataService = require("./mongodb");
 const QRCode = require("qrcode");
 const FormData = require("form-data");
 const config = require("../config/config");
+const {  ObjectId } = require('mongodb');
 
 async function handleUser(user, options) {
     try {
@@ -17,7 +18,7 @@ async function handleUser(user, options) {
                 if (!sessionId) {
                     return;
                 }
-                dbUser = await dataService.createDocument('users', { user, paymentMethods: {}, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+                dbUser = await dataService.createDocument('users', { user, paymentMethods: { rub: null, vnd: null, usdt: null }, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
             }
             if (sessionId) {
                 const userBySession = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
@@ -32,7 +33,7 @@ async function handleUser(user, options) {
         } else if (sessionId) {
             dbUser = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
             if (!dbUser) {
-                dbUser = await dataService.createDocument('users', { user: {}, paymentMethods: {}, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+                dbUser = await dataService.createDocument('users', { user: {}, paymentMethods: { rub: null, vnd: null, usdt: null }, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
             }
         }
         if (source) {
@@ -113,12 +114,23 @@ async function makeReferral(userId) {
     }
 }
 
-async function getUser(userId) {
+async function getUser(query) {
     try {
-        const user = await dataService.getDocumentByQuery('users', { userId });
+        const user = await dataService.getDocumentByQuery('users', query);
         return user;
     } catch (error) {
         return null;
+    }
+}
+
+async function updatePaymentMethods(id, paymentMethods) {
+    try {
+        const _id = new ObjectId(id);
+        await dataService.updateDocumentByQuery('users', { _id }, { $set: { paymentMethods } });
+        return true;
+    } catch (error) {
+        console.log(error)
+        return false
     }
 }
 
@@ -129,4 +141,5 @@ module.exports = {
     findUsers: findUsers,
     makeReferral: makeReferral,
     getUser: getUser,
+    updatePaymentMethods: updatePaymentMethods,
 };
