@@ -86,7 +86,7 @@ async function createOrder(order, method) {
         const form2 = new FormData();
         form2.append('chat_id', newOrder.userId);
         form2.append('parse_mode', 'HTML');
-        form.append('text', `Ваш заказ принят в обработку`);
+        form2.append('text', `Ваш заказ принят в обработку`);
         form2.append('reply_markup', JSON.stringify({
             inline_keyboard: [
                 [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },],

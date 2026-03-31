@@ -255,6 +255,14 @@ const findOneAndUpdate = async (collectionName, ...options) => {
     return result;
 }
 
+async function migration() {
+    // await updateDocuments('users', {}, {$set: {paymentMethods: {}}});
+    // await updateDocuments('products', {set: false}, {$set: {orderAddon: false}});
+    // await updateDocuments('products', {set: false}, {$unset: {addon: ''}});
+}
+
+migration()
+
 module.exports = {
     getDocument: getDocument,
     getDocumentByQuery: getDocumentByQuery,
