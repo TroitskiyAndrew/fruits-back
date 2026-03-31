@@ -113,7 +113,14 @@ async function makeReferral(userId) {
     }
 }
 
-
+async function getUser(userId) {
+    try {
+        const user = await dataService.getDocumentByQuery('users', { userId });
+        return user;
+    } catch (error) {
+        return null;
+    }
+}
 
 
 
@@ -121,4 +128,5 @@ module.exports = {
     handleUser: handleUser,
     findUsers: findUsers,
     makeReferral: makeReferral,
+    getUser: getUser,
 };

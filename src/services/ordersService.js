@@ -92,10 +92,10 @@ async function createOrder(order, method) {
     }
 }
 
-async function confirmOrder(orderId) {
+async function confirmOrder(orderId, when) {
     try {
         const _id = new ObjectId(orderId)
-        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': true } });
+        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': when } });
         await sendOrders({ _id })
         return order;
     } catch (error) {

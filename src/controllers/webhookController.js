@@ -18,7 +18,7 @@ const handleWebhook = async (req, res) => {
       const [action, value] = data.split('_SPLIT_');
       switch (action) {
         case 'CONFIRM': {
-          await ordersService.confirmOrder(value);
+          await ordersService.confirmOrder(value, 0);
 
           break;
         }
@@ -61,7 +61,7 @@ const handleWebhook = async (req, res) => {
           await telegrammService.sendMessage({
             to: message.chat.id,
             image: config.bot,
-            text: "Запусти бота",
+            text: "Запустить бота",
             buttons: [
               [
                 { text: "Старт", web_app: { url: 'https://fruits-front-eta.vercel.app/admin' } },

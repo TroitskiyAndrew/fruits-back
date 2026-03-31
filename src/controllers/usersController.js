@@ -8,7 +8,7 @@ const config = require("../config/config");
 
 const getUser = async (req, res) => {
   try {
-    const user = await dataService.getDocumentByQuery("users", { userId: Number(req.params.userId) });
+    const user = await userService.getUser(Number(req.params.userId));
     res.status(200).send(user);
     return;
   } catch (error) {
