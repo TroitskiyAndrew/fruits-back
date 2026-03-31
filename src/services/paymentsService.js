@@ -3,6 +3,7 @@ const dataService = require("./mongodb");
 const axios = require("axios");
 const config = require("../config/config");
 const FormData = require("form-data");
+const telegrammService = require("./telegrammService");
 
 
 
@@ -28,10 +29,10 @@ async function createPayment(options) {
 
 async function pay(options) {
     try {
-        const { paymentId, amount, currency, when, image } = options
+        const { paymentId, amount, currency, when, image, from, method } = options
         let payment = await dataService.getDocument('payments', paymentId);
         if (!payment) {
-            await createPayment({ from: req.telegramData.user.id || 0, to: 0, amount, amounts: { [currency]: amount }, orderId: 0, type: 0, payed: when, currency, method });
+            await createPayment({ from: from || 0, to: 0, amount, amounts: { [currency]: amount }, orderId: 0, type: 0, payed: when, currency, method });
             return;
         }
 
@@ -51,24 +52,22 @@ async function pay(options) {
             await dataService.updateDocument('payments', payment);
             await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: when } });
             const shares = await dataService.getDocuments('shares', { paymentId })
-            if(payment.to === config.cashier){
+            if (payment.to === config.cashier) {
                 const dbUser = await dataService.getDocumentByQuery('users', { userId: payment.from });
-                const form = new FormData();
-                form.append('chat_id', config.cashier);
-                form.append('parse_mode', 'HTML');
-                const userLink = `<a href="https://t.me/${dbUser.username}">${dbUser.first_name || dbUser.username || 'Пользователь'}</a>`;
-                form.append( image ? 'caption' : 'text', `${userLink} оплатил ${amount}`);
-                form.append('reply_markup', JSON.stringify({
-                    inline_keyboard: [
+                const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
+
+                await telegrammService.sendMessage({
+                    to:  config.cashier,
+                    text: `${userLink} оплатил ${amount}`,
+                    image,
+                    buttons: [
                         [{ text: "Подтвердить платеж", callback_data: `CONFIRM_PAYMENT_SPLIT_${paymentId}` }],
                         [{ text: "Неверная сумма", callback_data: `WRONG_PAYMENT_SPLIT_${paymentId}` }],
                         [{ text: "Нет поступления", callback_data: `DROP_PAYMENT_SPLIT_${paymentId}` }],
                         [{ text: "Посмотреть платеж", url: `https://t.me/viet_case_fruits?startapp=PAYMENT_SPLIT_${paymentId}` },],
                         [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${shares[0].orderId}` },],
                     ]
-                }));
-                await axios.post(`${config.tgApiUrl}/send${image ? 'Photo' : 'Message'}`, form,
-                    { headers: form.getHeaders() });
+                })
             }
 
             return true;

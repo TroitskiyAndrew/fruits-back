@@ -4,7 +4,7 @@ const http = require("http");
 const cors = require("cors");
 const  { parse, isValid } = require("@telegram-apps/init-data-node");
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer();
 
 const config = require("./config/config");
 const usersController = require("./controllers/usersController");
@@ -94,7 +94,7 @@ app.put("/products/:productId", productsController.updateProduct);
 app.delete("/products/:productId", productsController.deleteProduct);
 app.post("/all-products", productsController.getProducts);
 
-app.post("/pay", paymentsController.pay);
+app.post("/pay",upload.none(), paymentsController.pay);
 
 // app.get("/payments/:roomId", paymentsController.getPayments);
 // app.post("/payments", paymentsController.createPayment);

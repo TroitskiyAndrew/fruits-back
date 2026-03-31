@@ -2,8 +2,7 @@ const userService = require("../services/userService");
 const config = require("../config/config");
 const axios = require("axios");
 const ordersService = require("../services/ordersService");
-
-const stateMap = new Map()
+const telegrammService = require("../services/telegrammService");
 
 const handleWebhook = async (req, res) => {
   try {
@@ -20,23 +19,23 @@ const handleWebhook = async (req, res) => {
       switch (action) {
         case 'CONFIRM': {
           await ordersService.confirmOrder(value);
-          
+
           break;
         }
         case 'WRONG': {
           const order = await ordersService.getOrder(value);
-          await axios.post(`${config.tgApiUrl}/sendMessage`, {
-              chat_id: order.userId,
-              text: "Что-то не сошлось по сумме. Напишите сообщение, чтобы уточнить детали",
-            });
+          await telegrammService.sendMessage({
+            to: order.userId,
+            text: "Что-то не сошлось по сумме. Напишите сообщение, чтобы уточнить детали"
+          })
           break;
         }
         case 'DROP': {
           const order = await ordersService.getOrder(value);
-          await axios.post(`${config.tgApiUrl}/sendMessage`, {
-            chat_id: order.userId,
-            text: "Менеджер не получил вашу оплату. Напишите сообщение, чтобы уточнить детали",
-          });
+          await telegrammService.sendMessage({
+            to: order.userId,
+            text: "Менеджер не получил вашу оплату. Напишите сообщение, чтобы уточнить детали"
+          })
           reply_markup.inline_keyboard = []
           await ordersService.deleteOrder(value)
           break;
@@ -59,18 +58,17 @@ const handleWebhook = async (req, res) => {
         try {
           await userService.handleUser(message.from, { pressedStart: true });
           await ordersService.sendOrders({ userId: message.from.id });
-          await axios.post(`${config.tgApiUrl}/sendMessage`, {
-            chat_id: message.chat.id,
-            photo: config.bot,
-            text: 'Запусти бота',
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  { text: "Старт", web_app: { url: 'https://sverlov-vietnam-2026.com' } },
-                ]
+          await telegrammService.sendMessage({
+            to: message.chat.id,
+            image: config.bot,
+            text: "Запусти бота",
+            buttons: [
+              [
+                { text: "Старт", web_app: { url: 'https://fruits-front-eta.vercel.app/admin' } },
               ]
-            },
-          }, { timeout: 5000 });
+            ]
+          })
+          
         } catch (error) {
           console.log('Error sending welcome message:', error);
         }
@@ -79,11 +77,11 @@ const handleWebhook = async (req, res) => {
       } else {
         const user = message.from;
         const userLink = `<a href="https://t.me/${user.username}">${user.first_name || user.username || 'Пользователь'}</a>`;
-        await axios.post(`${config.tgApiUrl}/sendMessage`, {
-          chat_id: config.cashier,
-          parse_mode: 'HTML',
-          text: `Сообщение от ${userLink}`,
-        });
+
+        await telegrammService.sendMessage({
+            to: config.cashier,
+            text: `Сообщение от ${userLink}`,
+          })
         await axios.post(`${config.tgApiUrl}/forwardMessage`, {
           chat_id: config.cashier,
           from_chat_id: message.chat.id,

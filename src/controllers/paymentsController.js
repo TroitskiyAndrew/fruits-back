@@ -5,7 +5,11 @@ const paymentsService = require("../services/paymentsService");
 
 const pay = async (req, res) => {
   try {
-    const isPayed = await paymentsService.pay(req.body);
+    const options = { 
+      ...req.body,
+      from: req.telegramData?.user?.id 
+    };
+    const isPayed = await paymentsService.pay(options);
     res.status(200).send(isPayed);
     return;
   } catch (error) {

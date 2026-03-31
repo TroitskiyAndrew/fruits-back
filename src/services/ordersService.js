@@ -1,6 +1,7 @@
 const { ObjectId } = require("mongodb");
 const dataService = require("./mongodb");
 const paymentsService = require("./paymentsService");
+const telegrammService = require("./telegrammService");
 const axios = require("axios");
 const config = require("../config/config");
 const QRCode = require("qrcode");
@@ -18,10 +19,10 @@ async function sendOrders(query, options = {}) {
         }
         const congratsText = "Ваш заказ подтвержден"
         if (!sendTo) {
-            await axios.post(`${config.tgApiUrl}/sendMessage`, {
-                chat_id: tickets[0].userId,
+            await telegrammService.sendMessage({
+                to: tickets[0].userId,
                 text: congratsText,
-            });
+            })
         }
         await dataService.updateDocuments('orders', { ...query, 'state.sent': false }, { $set: { 'state.sent': true } });
         return true;
@@ -66,36 +67,25 @@ async function createOrder(order, method) {
         const payment = await paymentsService.createPayment({ orderId: newOrder.id, from: order.userId, to: config.cashier, amount: total, amounts: newOrder.content.prices, currency, type: 1, method });
 
         const dbUser = await dataService.getDocumentByQuery('users', { userId: newOrder.userId });
-        const form = new FormData();
-        form.append('chat_id', config.cashier);
-        form.append('parse_mode', 'HTML');
-        const userLink = `<a href="https://t.me/${dbUser.username}">${dbUser.first_name || dbUser.username || 'Пользователь'}</a>`;
-
-        form.append('text', `Заказ от ${userLink} на сумму ${total}`);
-        form.append('reply_markup', JSON.stringify({
-            inline_keyboard: [
+        const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
+        await telegrammService.sendMessage({
+            to: config.cashier,
+            text: `Заказ от ${userLink} на сумму ${total}`,
+            buttons: [
                 [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],
                 [{ text: "Отменить заказ", callback_data: `DROP_ORDER_SPLIT_${newOrder.id}` }],
                 [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },]
             ]
-        }));
-        await axios.post(`${config.tgApiUrl}/sendMessage`, form,
-            { headers: form.getHeaders() });
-
-
-        const form2 = new FormData();
-        form2.append('chat_id', newOrder.userId);
-        form2.append('parse_mode', 'HTML');
-        form2.append('text', `Ваш заказ принят в обработку`);
-        form2.append('reply_markup', JSON.stringify({
-            inline_keyboard: [
+        })
+        await telegrammService.sendMessage({
+            to: newOrder.userId,
+            text: `Ваш заказ принят в обработку`,
+            buttons: [
                 [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },],
             ]
-        }));
-        await axios.post(`${config.tgApiUrl}/sendMessage`, form2,
-            { headers: form.getHeaders() });
+        })
 
-        return {order: newOrder, payment};
+        return { order: newOrder, payment };
     } catch (error) {
         console.log(error)
         return null
