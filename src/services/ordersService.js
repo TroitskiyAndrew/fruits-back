@@ -75,14 +75,14 @@ async function createOrder(order, method) {
             buttons: [
                 [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],
                 [{ text: "Отменить заказ", callback_data: `DROP_ORDER_SPLIT_${newOrder.id}` }],
-                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },]
+                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER_SPLIT_${newOrder.id}` },]
             ]
         })
         await telegrammService.sendMessage({
             to: newOrder.userId,
             text: `Ваш заказ принят в обработку`,
             buttons: [
-                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${newOrder.id}` },],
+                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER_SPLIT_${newOrder.id}` },],
             ]
         })
 

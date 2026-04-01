@@ -58,11 +58,11 @@ async function pay(options) {
                 [{ text: "Подтвердить платеж", callback_data: `CONFIRM_PAYMENT_SPLIT_${paymentId}` }],
                 [{ text: "Неверная сумма", callback_data: `WRONG_PAYMENT_SPLIT_${paymentId}` }],
                 [{ text: "Нет поступления", callback_data: `DROP_PAYMENT_SPLIT_${paymentId}` }],
-                [{ text: "Посмотреть платеж", url: `https://t.me/viet_case_fruits?startapp=PAYMENT_SPLIT_${paymentId}` },],
+                [{ text: "Посмотреть платеж", url: `https://t.me/viet_case_fruits_bot?startapp=PAYMENT_SPLIT_${paymentId}` },],
             ]
             if (payment.to === cashierId) {
                 const shares = await dataService.getDocuments('shares', { paymentId })
-                buttons.push([{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits?startapp=ORDER_SPLIT_${shares[0].orderId}` },])
+                buttons.push([{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER_SPLIT_${shares[0].orderId}` },])
             }
             const dbUser = await dataService.getDocumentByQuery('users', { userId: payment.from });
             const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
