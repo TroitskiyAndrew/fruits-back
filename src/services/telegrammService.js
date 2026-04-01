@@ -35,16 +35,13 @@ async function updateMessage(message, options) {
             parse_mode: 'HTML',
             reply_markup: options.reply_markup || message.reply_markup,
         }
-        console.log('Updating message:', message);
-        console.log('Updating options:', options);
-        console.log('Updating Options:', updateOptions);
         if (hasPhoto) {
             updateOptions.caption = options.text || message.caption;
         } else {
             updateOptions.text = options.text || message.text;
         }
         if (options.dropButtons) {
-            updateOptions.reply_markup = updateOptions.reply_markup.reduce((acc, row) => {
+            updateOptions.reply_markup.inline_keyboard = updateOptions.reply_markup.inline_keyboard.reduce((acc, row) => {
                 const filteredRow = row.filter(button => !(button.callback_data || '').includes(options.dropButtons) && !(button.url || '').includes(options.dropButtons));
                 if (filteredRow.length > 0) {
                     acc.push(filteredRow);
