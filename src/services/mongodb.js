@@ -263,10 +263,10 @@ async function migration() {
     // }}});
     // await updateDocuments('products', {set: false}, {$set: {orderAddon: false}});
     // await updateDocuments('products', {set: false}, {$unset: {addon: ''}});
-    await deleteDocumentsByQuery('orders', { });
-    await deleteDocumentsByQuery('payments', { });
-    await deleteDocumentsByQuery('shares', { });
-    await updateDocumentByQuery('counters', { collection: 'orders' }, { $set: { seq: 0 } });
+    // await deleteDocumentsByQuery('orders', { });
+    // await deleteDocumentsByQuery('payments', { });
+    // await deleteDocumentsByQuery('shares', { });
+    // await updateDocumentByQuery('counters', { collection: 'orders' }, { $set: { seq: 0 } });
     
 }
 
