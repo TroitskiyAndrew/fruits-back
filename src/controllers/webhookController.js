@@ -17,7 +17,6 @@ const handleWebhook = async (req, res) => {
       const reply_markup = cq.message.reply_markup;
       let text = restoreHtml(cq.message.caption || cq.message.text || '', cq.message.caption_entities || cq.message.entities );
       let responseText;
-      console.log('message', cq.message);
       const [action, value] = data.split(config.splitParams);
       switch (action) {
         case 'CONFIRM_ORDER': {
