@@ -11,7 +11,7 @@ const configService = require("./configService");
 async function createPayment(options) {
     try {
         const { from, to, amount, amounts, orderId, type, payed = null, confirmed = null, currency, method } = options;
-        const payment = await dataService.createDocument('payments', { from, to, amount, amounts, currency, payed, confirmed, method })
+        const payment = await dataService.createDocument('payments', { from, to, amount, amounts, currency, payed, confirmed, method, deleted: null })
         await dataService.createDocument('shares', {
             from,
             to,
@@ -20,6 +20,7 @@ async function createPayment(options) {
             amounts,
             type,
             payed,
+            deleted: null,
         })
         return payment;
     } catch (error) {
