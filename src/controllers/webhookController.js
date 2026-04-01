@@ -22,17 +22,17 @@ const handleWebhook = async (req, res) => {
       switch (action) {
         case 'CONFIRM_ORDER': {
           await ordersService.confirmOrder(value);
-          await telegrammService.updateMessage(cq.message, { text: `Заказ подтвержден: \u200B${text}`, dropButtons: [action] });
+          await telegrammService.updateMessage(cq.message, { text: `Заказ подтвержден: \n\n${text}`, dropButtons: [action] });
           break;
         }
         case 'CONFIRM_PAYMENT': {
           await paymentsService.confirmPayment(value, true);
-          await telegrammService.updateMessage(cq.message, { text: `Оплата подтверждена: \u200B${text}`, dropButtons: [action, 'DROP_PAYMENT'] });
+          await telegrammService.updateMessage(cq.message, { text: `Оплата подтверждена: \n\n${text}`, dropButtons: [action, 'DROP_PAYMENT'] });
           break;
         }
         case 'DROP_PAYMENT': {
           await paymentsService.confirmPayment(value, false);
-          await telegrammService.updateMessage(cq.message, { text: `Оплата не получена: ${text}`, dropButtons: [action, 'CONFIRM_PAYMENT'] });
+          await telegrammService.updateMessage(cq.message, { text: `Оплата не получена: \n\n${text}`, dropButtons: [action, 'CONFIRM_PAYMENT'] });
           break;
         }
         default:
