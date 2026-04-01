@@ -8,7 +8,6 @@ const telegrammService = require("../services/telegrammService");
 
 const handleWebhook = async (req, res) => {
   try {
-    console.log('Webhook received:', req.body);
     const update = req.body;
     res.sendStatus(200);
 
@@ -19,7 +18,6 @@ const handleWebhook = async (req, res) => {
       let text = cq.message.caption || cq.message.text + "\u200B";
       let responseText;
       const [action, value] = data.split(config.splitParams);
-      console.log('Callback query received:', { action, value });
       switch (action) {
         case 'CONFIRM_ORDER': {
           await ordersService.confirmOrder(value);
@@ -67,7 +65,6 @@ const handleWebhook = async (req, res) => {
         } catch (error) {
           console.log('Error sending welcome message:', error);
         }
-        console.log('end', Date.now() - now)
         return;
       } else {
         const user = message.from;

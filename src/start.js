@@ -22,7 +22,6 @@ const server = http.createServer(app);
 
 const telegramInitDataMiddleware = async (req, res, next) => {
   try {
-    console.log('telegramInitDataMiddleware 0', config.prod);
     // // ToDo для локального тестирования
     //   req.telegramData = { user: { id: 111, first_name: 'Тестовый юзер' }, chat: null, params: {} }
     //   next();
@@ -34,23 +33,18 @@ const telegramInitDataMiddleware = async (req, res, next) => {
       next();
       return;
     }
-    console.log('telegramInitDataMiddleware 1');
     // 1) Получаем СЫРУЮ строку initData (как есть, без перекодирования!)
     const raw = (req.get(config.telegrammHeader) || req.body?.initData || '').toString();
     if (!raw) {
-      console.log('telegramInitDataMiddleware 2');
       req.telegramData = {}
       await userService.handleUser(null, {sessionId: req.body.sessionId});
-      console.log('telegramInitDataMiddleware 2.5');
       next();
     } else {
-      console.log('telegramInitDataMiddleware 3');
       const isInitDataValid = isValid(
         raw,
         config.botToken,
       );
       if(!isInitDataValid){
-        console.log('telegramInitDataMiddleware 4');
         return res.status(401).json({ error: 'initData invalid' });
       }
       const telegramData = parse(raw);
@@ -61,7 +55,6 @@ const telegramInitDataMiddleware = async (req, res, next) => {
       } , {}) 
       req.telegramData = telegramData;
       await userService.handleUser(telegramData.user, {sessionId: req.body.sessionId})
-      console.log('telegramInitDataMiddleware 5');
       next();
     }
 
