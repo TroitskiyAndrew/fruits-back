@@ -14,7 +14,7 @@ const FormData = require("form-data");
 async function sendOrders(query, options = {}) {
     try {
         const { sendTo } = options;
-        const orders = await dataService.getDocuments('orders', { ...query, 'state.sent': false });
+        const orders = await dataService.getDocuments('orders', { ...query, 'status.sent': false });
         if (!orders.length) {
             return;
         }
@@ -25,7 +25,7 @@ async function sendOrders(query, options = {}) {
                 text: congratsText,
             })
         }
-        await dataService.updateDocuments('orders', { ...query, 'state.sent': false }, { $set: { 'state.sent': true } });
+        await dataService.updateDocuments('orders', { ...query, 'status.sent': false }, { $set: { 'status.sent': true } });
         return true;
 
     } catch (error) {
@@ -96,7 +96,7 @@ async function createOrder(order, method) {
 async function confirmOrder(orderId) {
     try {
         const _id = new ObjectId(orderId)
-        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': Date.now() } });
+        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'status.confirmed': Date.now() } });
         await sendOrders({ _id })
         return true;
     } catch (error) {
@@ -120,10 +120,10 @@ async function updateOrder(order) {
 async function deleteOrder(orderId) {
     try {
         const order = await dataService.getDocument('orders', orderId);
-        if (order.state.confirmed) {
+        if (order.status.confirmed) {
             return false
         }
-        order.state.deleted = true;
+        order.status.deleted = true;
         await dataService.updateDocument('orders', order);
         return true;
     } catch (error) {
