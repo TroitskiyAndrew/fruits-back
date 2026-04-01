@@ -42,7 +42,15 @@ async function updateMessage(message, options) {
         }
         if (options.dropButtons) {
             updateOptions.reply_markup.inline_keyboard = updateOptions.reply_markup.inline_keyboard.reduce((acc, row) => {
-                const filteredRow = row.filter(button => !(button.callback_data || '').includes(options.dropButtons) && !(button.url || '').includes(options.dropButtons));
+                const filteredRow = row.filter(button => {
+                    const textToSearch = button.callback_data || button.url || '';
+                    for (const dropText of options.dropButtons) {
+                        if (textToSearch.includes(dropText)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
                 if (filteredRow.length > 0) {
                     acc.push(filteredRow);
                 }

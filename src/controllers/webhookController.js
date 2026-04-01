@@ -15,24 +15,24 @@ const handleWebhook = async (req, res) => {
       const cq = update.callback_query;
       const data = cq.data;
       const reply_markup = cq.message.reply_markup;
-      let text = cq.message.caption_html || cq.message.caption || cq.message.text_html || cq.message.text + "\u200B";
+      let text = restoreHtml(cq.message.caption || cq.message.text || '', cq.message.caption_entities || cq.message.entities );
       let responseText;
       console.log('message', cq.message);
       const [action, value] = data.split(config.splitParams);
       switch (action) {
         case 'CONFIRM_ORDER': {
           await ordersService.confirmOrder(value);
-          await telegrammService.updateMessage(cq.message, { text: `Заказ подтвержден: ${text}`, dropButtons: action });
+          await telegrammService.updateMessage(cq.message, { text: `Заказ подтвержден: \u200B${text}`, dropButtons: [action] });
           break;
         }
         case 'CONFIRM_PAYMENT': {
           await paymentsService.confirmPayment(value, true);
-          await telegrammService.updateMessage(cq.message, { text: `Оплата подтверждена: ${text}`, dropButtons: action });
+          await telegrammService.updateMessage(cq.message, { text: `Оплата подтверждена: \u200B${text}`, dropButtons: [action, 'DROP_PAYMENT'] });
           break;
         }
         case 'DROP_PAYMENT': {
           await paymentsService.confirmPayment(value, false);
-          await telegrammService.updateMessage(cq.message, { text: `Оплата не получена: ${text}`, dropButtons: action });
+          await telegrammService.updateMessage(cq.message, { text: `Оплата не получена: ${text}`, dropButtons: [action, 'CONFIRM_PAYMENT'] });
           break;
         }
         default:
@@ -92,6 +92,34 @@ const handleWebhook = async (req, res) => {
     return;
   }
 };
+
+function restoreHtml(text, entities) {
+  if (!entities) return text;
+
+  let result = '';
+  let lastIndex = 0;
+
+  for (const entity of entities) {
+    const { offset, length, type, url } = entity;
+
+    // обычный текст до entity
+    result += text.slice(lastIndex, offset);
+
+    const entityText = text.slice(offset, offset + length);
+
+    if (type === 'text_link') {
+      result += `<a href="${url}">${entityText}</a>`;
+    } else {
+      result += entityText;
+    }
+
+    lastIndex = offset + length;
+  }
+
+  result += text.slice(lastIndex);
+
+  return result;
+}
 
 module.exports = {
   handleWebhook: handleWebhook,
