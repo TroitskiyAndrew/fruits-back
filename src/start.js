@@ -40,7 +40,8 @@ const telegramInitDataMiddleware = async (req, res, next) => {
     if (!raw) {
       console.log('telegramInitDataMiddleware 2');
       req.telegramData = {}
-      await userService.handleUser(null, {sessionId: req.body.sessionId})
+      await userService.handleUser(null, {sessionId: req.body.sessionId});
+      console.log('telegramInitDataMiddleware 2.5');
       next();
     } else {
       console.log('telegramInitDataMiddleware 3');
