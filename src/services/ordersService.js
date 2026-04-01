@@ -73,16 +73,16 @@ async function createOrder(order, method) {
             to: configService.getCashierId(),
             text: `Заказ от ${userLink} на сумму ${total}`,
             buttons: [
-                [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER_SPLIT_${newOrder.id}` }],
-                [{ text: "Отменить заказ", callback_data: `DROP_ORDER_SPLIT_${newOrder.id}` }],
-                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER_SPLIT_${newOrder.id}` },]
+                [{ text: "Подтвердить заказ", callback_data: `CONFIRM_ORDER${config.splitParams}${newOrder.id}` }],
+                // [{ text: "Отменить заказ", callback_data: `DROP_ORDER${config.splitParams}${newOrder.id}` }],
+                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER${config.splitParams}${newOrder.id}` },]
             ]
         })
         await telegrammService.sendMessage({
             to: newOrder.userId,
             text: `Ваш заказ принят в обработку`,
             buttons: [
-                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER_SPLIT_${newOrder.id}` },],
+                [{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER${config.splitParams}${newOrder.id}` },],
             ]
         })
 
@@ -93,10 +93,10 @@ async function createOrder(order, method) {
     }
 }
 
-async function confirmOrder(orderId, when) {
+async function confirmOrder(orderId) {
     try {
         const _id = new ObjectId(orderId)
-        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': when } });
+        await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': Date.now() } });
         await sendOrders({ _id })
         return order;
     } catch (error) {

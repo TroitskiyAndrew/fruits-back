@@ -3,6 +3,7 @@ const configService = require("../services/configService");
 const config = require("../config/config");
 const axios = require("axios");
 const ordersService = require("../services/ordersService");
+const paymentsService = require("../services/paymentsService");
 const telegrammService = require("../services/telegrammService");
 
 const handleWebhook = async (req, res) => {
@@ -16,29 +17,21 @@ const handleWebhook = async (req, res) => {
       const reply_markup = cq.message.reply_markup;
       let text = cq.message.caption || cq.message.text + "\u200B";
       let responseText;
-      const [action, value] = data.split('_SPLIT_');
+      const [action, value] = data.split(config.splitParams);
       switch (action) {
-        case 'CONFIRM': {
-          await ordersService.confirmOrder(value, 0);
-
+        case 'CONFIRM_ORDER': {
+          await ordersService.confirmOrder(value);
+          await telegrammService.updateMessage(cq.message, { text: `Заказ подтвержден: ${text}`, dropButtons: action });
           break;
         }
-        case 'WRONG': {
-          const order = await ordersService.getOrder(value);
-          await telegrammService.sendMessage({
-            to: order.userId,
-            text: "Что-то не сошлось по сумме. Напишите сообщение, чтобы уточнить детали"
-          })
+        case 'CONFIRM_PAYMENT': {
+          await paymentsService.confirmPayment(value, true);
+          await telegrammService.updateMessage(cq.message, { text: `Оплата подтверждена: ${text}`, dropButtons: action });
           break;
         }
-        case 'DROP': {
-          const order = await ordersService.getOrder(value);
-          await telegrammService.sendMessage({
-            to: order.userId,
-            text: "Менеджер не получил вашу оплату. Напишите сообщение, чтобы уточнить детали"
-          })
-          reply_markup.inline_keyboard = []
-          await ordersService.deleteOrder(value)
+        case 'DROP_PAYMENT': {
+          await paymentsService.confirmPayment(value, false);
+          await telegrammService.updateMessage(cq.message, { text: `Оплата не получена: ${text}`, dropButtons: action });
           break;
         }
         default:
@@ -49,7 +42,6 @@ const handleWebhook = async (req, res) => {
         callback_query_id: cq.id,
         text: responseText
       });
-
 
     }
     const message = update.message;
@@ -69,7 +61,7 @@ const handleWebhook = async (req, res) => {
               ]
             ]
           })
-          
+
         } catch (error) {
           console.log('Error sending welcome message:', error);
         }
@@ -80,9 +72,9 @@ const handleWebhook = async (req, res) => {
         const userLink = `<a href="https://t.me/${user.username}">${user.first_name || user.username || 'Пользователь'}</a>`;
 
         await telegrammService.sendMessage({
-            to: configService.getCashierId(),
-            text: `Сообщение от ${userLink}`,
-          })
+          to: configService.getCashierId(),
+          text: `Сообщение от ${userLink}`,
+        })
         await axios.post(`${config.tgApiUrl}/forwardMessage`, {
           chat_id: configService.getCashierId(),
           from_chat_id: message.chat.id,
