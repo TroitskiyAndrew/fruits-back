@@ -31,7 +31,7 @@ async function createPayment(options) {
 
 async function pay(options) {
     try {
-        const { paymentId, amount, currency,  image, from, method } = options
+        const { paymentId, amount, currency, image, from, method } = options
         const when = Date.now();
         let payment = await dataService.getDocument('payments', paymentId);
         if (!payment) {
@@ -55,22 +55,34 @@ async function pay(options) {
             await dataService.updateDocument('payments', payment);
             await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: when } });
             await dataService.updateDocumentByQuery('orders', { _id: new ObjectId(payment.orderId) }, { $set: { 'status.payed': when } });
-            
+
             const cashierId = configService.getCashierId();
             const buttons = [
                 [{ text: "Подтвердить платеж", callback_data: `CONFIRM_PAYMENT${config.splitParams}${paymentId}` }],
                 [{ text: "Нет поступления", callback_data: `DROP_PAYMENT${config.splitParams}${paymentId}` }],
                 [{ text: "Посмотреть платеж", url: `https://t.me/viet_case_fruits_bot?startapp=PAYMENT${config.splitParams}${paymentId}` },],
             ]
-            if (payment.to === cashierId) {
-                const shares = await dataService.getDocuments('shares', { paymentId })
-                buttons.push([{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER${config.splitParams}${shares[0].orderId}` },])
+            const clientShares = await dataService.getDocuments('shares', { paymentId, type: 1 });
+            if (clientShares.length) {
+                if (payment.to === cashierId) {
+                    buttons.push([{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER${config.splitParams}${clientShares[0].orderId}` },])
+                }
+                const orders = [...new Set(clientShares.map(share => share.orderId))];
+                for(const orderId of orders) {
+                    const unpaidShare = await dataService.getDocumentByQuery('shares', { orderId, type:1, payed: null });
+                    if(!unpaidShare) {
+                        await dataService.updateDocumentByQuery('orders', { _id: new ObjectId(orderId) }, { $set: { 'status.payed': when } });
+                    }
+                }
+
             }
+
+
             const dbUser = await dataService.getDocumentByQuery('users', { userId: payment.from });
             const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
 
             await telegrammService.sendMessage({
-                to: cashierId,
+                to: payment.to,
                 text: `${userLink} оплатил ${amount}`,
                 image,
                 buttons
