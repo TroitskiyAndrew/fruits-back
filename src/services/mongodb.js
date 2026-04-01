@@ -256,9 +256,18 @@ const findOneAndUpdate = async (collectionName, ...options) => {
 }
 
 async function migration() {
-    // await updateDocuments('users', {}, {$set: {paymentMethods: {}}});
+    // await updateDocuments('users', {}, {$set: {paymentMethods: {
+    //     'rub': null,
+    //     'vnd': null,
+    //     'usdt': null,
+    // }}});
     // await updateDocuments('products', {set: false}, {$set: {orderAddon: false}});
     // await updateDocuments('products', {set: false}, {$unset: {addon: ''}});
+    await deleteDocumentsByQuery('orders', { });
+    await deleteDocumentsByQuery('payments', { });
+    await deleteDocumentsByQuery('shares', { });
+    await updateDocumentByQuery('counters', { collection: 'orders' }, { $set: { seq: 0 } });
+    
 }
 
 migration()
