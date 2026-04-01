@@ -35,6 +35,9 @@ async function updateMessage(message, options) {
             parse_mode: 'HTML',
             reply_markup: options.reply_markup || message.reply_markup,
         }
+        console.log('Updating message:', message);
+        console.log('Updating options:', options);
+        console.log('Updating Options:', updateOptions);
         if (hasPhoto) {
             updateOptions.caption = options.text || message.caption;
         } else {
