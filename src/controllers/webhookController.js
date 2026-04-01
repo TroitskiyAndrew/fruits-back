@@ -15,7 +15,7 @@ const handleWebhook = async (req, res) => {
       const cq = update.callback_query;
       const data = cq.data;
       const reply_markup = cq.message.reply_markup;
-      let text = cq.message.caption || cq.message.text + "\u200B";
+      let text = cq.message.caption_html || cq.message.caption || cq.message.text_html || cq.message.text + "\u200B";
       let responseText;
       const [action, value] = data.split(config.splitParams);
       switch (action) {
