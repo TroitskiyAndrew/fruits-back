@@ -22,7 +22,7 @@ const server = http.createServer(app);
 
 const telegramInitDataMiddleware = async (req, res, next) => {
   try {
-
+    console.log('telegramInitDataMiddleware 0');
     // // ToDo для локального тестирования
     //   req.telegramData = { user: { id: 111, first_name: 'Тестовый юзер' }, chat: null, params: {} }
     //   next();
@@ -42,6 +42,7 @@ const telegramInitDataMiddleware = async (req, res, next) => {
       await userService.handleUser(null, {sessionId: req.body.sessionId})
       next();
     } else {
+      console.log('telegramInitDataMiddleware 1');
       const isInitDataValid = isValid(
         raw,
         config.botToken,
@@ -57,6 +58,7 @@ const telegramInitDataMiddleware = async (req, res, next) => {
       } , {}) 
       req.telegramData = telegramData;
       await userService.handleUser(telegramData.user, {sessionId: req.body.sessionId})
+      console.log('telegramInitDataMiddleware 2');
       next();
     }
 

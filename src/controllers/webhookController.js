@@ -8,6 +8,7 @@ const telegrammService = require("../services/telegrammService");
 
 const handleWebhook = async (req, res) => {
   try {
+    console.log('Webhook received:', req.body);
     const update = req.body;
     res.sendStatus(200);
 
