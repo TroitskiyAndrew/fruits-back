@@ -98,10 +98,10 @@ async function confirmOrder(orderId) {
         const _id = new ObjectId(orderId)
         await dataService.updateDocumentByQuery('orders', { _id }, { $set: { 'state.confirmed': Date.now() } });
         await sendOrders({ _id })
-        return order;
+        return true;
     } catch (error) {
         console.log(error)
-        return null
+        return false
     }
 }
 
@@ -110,10 +110,10 @@ async function updateOrder(order) {
         const { id, ...rest } = order;
         const _id = new ObjectId(id);
         await dataService.updateDocumentByQuery('orders', { _id }, { $set: { ...rest } });
-        return order;
+        return true;
     } catch (error) {
         console.log(error)
-        return null
+        return false
     }
 }
 

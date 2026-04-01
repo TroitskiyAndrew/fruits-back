@@ -18,6 +18,7 @@ const handleWebhook = async (req, res) => {
       let text = cq.message.caption || cq.message.text + "\u200B";
       let responseText;
       const [action, value] = data.split(config.splitParams);
+      console.log('Callback query received:', { action, value });
       switch (action) {
         case 'CONFIRM_ORDER': {
           await ordersService.confirmOrder(value);

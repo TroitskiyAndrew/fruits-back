@@ -113,12 +113,13 @@ async function pay(options) {
 }
 async function confirmPayment(paymentId, confirmed) {
     try {
+        console.log('Confirming payment:', { paymentId, confirmed })
         const update = confirmed ? { confirmed: Date.now() } : { payed: null }
         await dataService.updateDocumentByQuery('payments', { _id: new ObjectId(paymentId) }, { $set: update })
-        return payment;
+        return true;
     } catch (error) {
         console.log(error)
-        return null
+        return false
     }
 }
 async function getPayment(id) {
