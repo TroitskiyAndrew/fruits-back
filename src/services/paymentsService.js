@@ -54,6 +54,7 @@ async function pay(options) {
             payment.payed = when;
             await dataService.updateDocument('payments', payment);
             await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: when } });
+            await dataService.updateDocumentByQuery('orders', { _id: new ObjectId(payment.orderId) }, { $set: { 'status.payed': when } });
             
             const cashierId = configService.getCashierId();
             const buttons = [
