@@ -120,9 +120,20 @@ async function confirmPayment(paymentId, when) {
         return null
     }
 }
+async function getPayment(id) {
+    try {
+        const payment = await dataService.getDocument('payments', id);
+        return payment;
+    } catch (error) {
+        console.log(error)
+        return null
+    }
+}
+
 
 module.exports = {
     createPayment: createPayment,
     pay: pay,
+    getPayment: getPayment,
     confirmPayment: confirmPayment,
 };

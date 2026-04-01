@@ -19,10 +19,22 @@ const pay = async (req, res) => {
   }
 };
 
+const getPayment = async (req, res) => {
+  try {
+    const payment = await paymentsService.getPayment(req.params.id);
+    res.status(200).send(payment);
+    return;
+  } catch (error) {
+    console.log(error)
+    res.status(500).send(null);
+    return;
+  }
+};
 
 
 
 module.exports = {
   pay: pay,
+  getPayment: getPayment,
 };
 

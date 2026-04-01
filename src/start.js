@@ -99,6 +99,7 @@ app.delete("/products/:productId", productsController.deleteProduct);
 app.post("/all-products", productsController.getProducts);
 
 app.post("/pay",upload.none(), paymentsController.pay);
+app.get("/payments/:id", paymentsController.getPayment);
 
 // app.get("/payments/:roomId", paymentsController.getPayments);
 // app.post("/payments", paymentsController.createPayment);
