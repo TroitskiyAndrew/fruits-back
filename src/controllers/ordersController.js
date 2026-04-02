@@ -1,6 +1,7 @@
 
 const dataService = require("../services/mongodb");
 const ordersService = require("../services/ordersService");
+const configService = require("../services/configService");
 const QRCode = require("qrcode");
 const FormData = require("form-data");
 const config = require("../config/config");
@@ -19,7 +20,12 @@ const getOrder = async (req, res) => {
 };
 const getOrders = async (req, res) => {
   try {
-    const orders = await dataService.deleteDocumentsByQuery("orders", req.body.query);
+    const dbUser = await dataService.getDocumentByQuery('users', {userId: req.telegramData.user.id})
+    const query = req.body.query;
+    if(!dbUser.admin &&  req.telegramData.user.id !== configService.getCashierId()) {
+      query.userId = req.telegramData.user.id
+    } 
+    const orders = await dataService.getDocuments("orders", query);
     res.status(200).send(orders);
     return;
   } catch (error) {
