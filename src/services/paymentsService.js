@@ -11,7 +11,16 @@ const configService = require("./configService");
 async function createPayment(options) {
     try {
         const { from, to, amount, amounts, orderId, type, payed = null, confirmed = null, currency, method } = options;
-        const payment = await dataService.createDocument('payments', { from, to, amount, amounts, currency, payed, confirmed, method, deleted: null })
+        let payment = await dataService.getDocumentByQuery('payments', {from, to, payed: null});
+        if(payment) {
+            Object.keys(payment.amounts).forEach(cur => payment.amounts[cur] += amounts[cur]);
+            payment.amount = payment.amounts[payment.currency];
+            await dataService.updateDocument('payments', payment)
+
+        } else {
+            payment = await dataService.createDocument('payments', { from, to, amount, amounts, currency, payed, confirmed, method, deleted: null })
+        }
+
         await dataService.createDocument('shares', {
             from,
             to,
