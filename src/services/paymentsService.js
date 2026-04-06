@@ -6,13 +6,15 @@ const FormData = require("form-data");
 const telegrammService = require("./telegrammService");
 const configService = require("./configService");
 
+const CURRENCIES = ['vnd', 'rub', 'usdt'];
+const VND = CURRENCIES[0]
 
 
 async function createPayment(options) {
     try {
         const { from, to, amount, amounts, orderId, type, payed = null, confirmed = null, currency, method } = options;
-        let payment = await dataService.getDocumentByQuery('payments', {from, to, payed: null});
-        if(payment) {
+        let payment = await dataService.getDocumentByQuery('payments', { from, to, payed: null });
+        if (payment) {
             Object.keys(payment.amounts).forEach(cur => payment.amounts[cur] += amounts[cur]);
             payment.amount = payment.amounts[payment.currency];
             await dataService.updateDocument('payments', payment)
@@ -48,85 +50,132 @@ async function pay(options) {
             return;
         }
 
-        if (payment.payed || payment.amounts[currency] !== amount) {
+        if (payment.payed || amount === 0) {
             return false;
         }
         if (payment.currency !== currency) {
             payment.currency = currency;
             payment.amount = payment.amounts[currency];
         }
+        payment.method = method;
+        payment.payed = when;
         if (image) {
             payment.image = image;
         }
 
-        if (amount === payment.amount) {
-            payment.payed = when;
-            await dataService.updateDocument('payments', payment);
-            await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: when } });
-            await dataService.updateDocumentByQuery('orders', { _id: new ObjectId(payment.orderId) }, { $set: { 'status.payed': when } });
+        const left = amount - payment.amount;
 
-            const cashierId = configService.getCashierId();
-            const buttons = [
-                [{ text: "Подтвердить платеж", callback_data: `CONFIRM_PAYMENT${config.splitParams}${paymentId}` }],
-                [{ text: "Нет поступления", callback_data: `DROP_PAYMENT${config.splitParams}${paymentId}` }],
-                [{ text: "Посмотреть платеж", url: `https://t.me/viet_case_fruits_bot?startapp=PAYMENT${config.splitParams}${paymentId}` },],
-            ]
-            const clientShares = await dataService.getDocuments('shares', { paymentId, type: 1 });
-            if (clientShares.length) {
-                if (payment.to === cashierId) {
-                    buttons.push([{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER${config.splitParams}${clientShares[0].orderId}` },])
-                }
+        const cashierId = configService.getCashierId();
+        const buttons = [
+            [{ text: "Подтвердить платеж", callback_data: `CONFIRM_PAYMENT${config.splitParams}${paymentId}` }],
+            // Todo дописать вариант с корректировкой суммы
+            [{ text: "Нет поступления", callback_data: `DROP_PAYMENT${config.splitParams}${paymentId}` }],
+            [{ text: "Посмотреть платеж", url: `https://t.me/viet_case_fruits_bot?startapp=PAYMENT${config.splitParams}${paymentId}` },],
+        ]
+        const clientShares = await dataService.getDocuments('shares', { paymentId, type: 1 });
+        if (clientShares.length) {
+            if (payment.to === cashierId) {
+                buttons.push([{ text: "Посмотреть заказ", url: `https://t.me/viet_case_fruits_bot?startapp=ORDER${config.splitParams}${clientShares[0].orderId}` },])
+            }
+            if (left >= 0) {
                 const orders = [...new Set(clientShares.map(share => share.orderId))];
-                for(const orderId of orders) {
-                    const unpaidShare = await dataService.getDocumentByQuery('shares', { orderId, type:1, payed: null });
-                    if(!unpaidShare) {
+                for (const orderId of orders) {
+                    const unpaidShare = await dataService.getDocumentByQuery('shares', { orderId, paymentId: { $ne: paymentId }, type: 1, payed: null });
+                    if (!unpaidShare) {
                         await dataService.updateDocumentByQuery('orders', { _id: new ObjectId(orderId) }, { $set: { 'status.payed': when } });
                     }
                 }
-
             }
 
-
-            const dbUser = await dataService.getDocumentByQuery('users', { userId: payment.from });
-            const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
-
-            await telegrammService.sendMessage({
-                to: payment.to,
-                text: `${userLink} оплатил ${amount}`,
-                image,
-                buttons
-            })
-
-            return true;
-        } else {
-            // payment.payed = when;
-            // const partSize = Math.round(((amount / payment.amounts[currency]) + Number.EPSILON) * 100) / 100;
-
-            // const newPayment = await dataService.createDocument('payments', { from: payment.from, to: payment.to, amount: payment.amount - amount, payed: null })
-            // payment.amount = amount;
-            // const shares = await dataService.getDocuments('shares', { paymentId });
-            // for (const share of shares) {
-            //     if (amount >= share.amounts[currency]) {
-            //         amount -= share.amounts[currency]
-            //         await dataService.updateDocument('shares', share)
-            //     } else if (amount > 0) {
-            //         const newShareAmount = share.amounts[currency] - amount;
-            //         share.amount = amount;
-            //         await dataService.updateDocument('shares', share);
-            //         await dataService.createDocument('shares', {
-            //             paymentId: newPayment.id,
-            //             orderId: share.orderId,
-            //             amount: newShareAmount,
-            //             currency: share.currency,
-            //             payed: null,
-            //             type: share.type,
-            //         })
-            //     } else {
-            //         share.paymentId = newPayment.id;
-            //         await dataService.updateDocument('shares', share);
-            //     }
-            // }
         }
+
+
+        const dbUser = await dataService.getDocumentByQuery('users', { userId: payment.from });
+        const userLink = `<a href="https://t.me/${dbUser.user.username}">${dbUser.user.first_name || dbUser.user.username || 'Пользователь'}</a>`;
+
+        await telegrammService.sendMessage({
+            to: payment.to,
+            text: `${userLink} оплатил ${amount}`,
+            image,
+            buttons
+        });
+        if (left > 0) {
+            const k = amount / payment.amount;
+            payment.amount = amount;
+            payment.amounts[currency] = amount;
+            for (const curr of CURRENCIES) {
+                if (curr === currency) {
+                    continue;
+                }
+                else {
+                    const accurate = curr === VND ? 1 : 100;
+                    payment.amounts[curr] = Math.round(payment.amounts[curr] * k * accurate) / accurate;
+                }
+            }
+        } else if (left < 0) {
+            let amountLeft = amount;
+            let amountsLeft = {};
+            console.log('1', payment.amounts)
+            const newPayment = await dataService.createDocument('payments', { ...payment, payed: null, confirmed: null, amount: payment.amount - amount, amounts: amountsLeft, currency, method })
+            for (const curr of CURRENCIES) {
+                amountsLeft[curr] = payment.amounts[curr] || 0;
+                payment.amounts[curr] = 0
+                newPayment.amounts[curr] = 0
+            }
+            console.log('2', payment.amounts)
+            const shares = await dataService.getDocuments('shares', { paymentId });
+            for (const share of shares) {
+                if (amountLeft > 0) {
+                    if (amountLeft >= (share.amounts[currency] || 0)) {
+                        amountLeft -= (share.amounts[currency] || 0);
+                        console.log('3', payment.amounts)
+                        for (const curr of CURRENCIES) {
+                            amountsLeft[curr] -= (share.amounts[currency] || 0);
+                            payment.amounts[curr] += (share.amounts[currency] || 0);
+
+                        }
+                        console.log('4', payment.amounts)
+                    } else {
+                        const newAmounts = {};
+                        const k = amountLeft / share.amounts[currency];
+                        console.log('5', payment.amounts)
+                        for (const curr of CURRENCIES) {
+                            const accurate = curr === VND ? 1 : 100;
+                            newAmounts[curr] = share.amounts[curr] - (Math.round(share.amounts[curr] * k * accurate) / accurate);
+                            share.amounts[curr] = share.amounts[curr] - newAmounts[curr];
+                            payment.amounts[curr] += share.amounts[curr];
+                        }
+                        console.log('6', payment.amounts)
+                        await dataService.createDocument('shares', {
+                            ...share,
+                            paymentId: newPayment.id,
+                            amounts: newAmounts,
+                            payed: null,
+                            deleted: null,
+                        })
+                        newPayment.amounts = newAmounts
+                        amountLeft = 0;
+                    }
+                    share.payed = when;
+
+                } else {
+                    share.paymentId = newPayment.id;
+                    for (const curr of CURRENCIES) {
+                        newPayment.amounts[curr] += share.amounts[curr];
+                    }
+                }
+                await dataService.updateDocument("shares", share)
+            }
+            console.log('7', payment.amounts)
+            await dataService.updateDocumentByQuery('payments', { _id: new ObjectId(newPayment.id) }, { $set: { amounts: newPayment.amounts } })
+            payment.amount = amount;
+            console.log(shares)
+        }
+        console.log('8', payment.amounts)
+        await dataService.updateDocument('payments', payment);
+        await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: when } });
+
+        return true;
 
         return payment;
     } catch (error) {
