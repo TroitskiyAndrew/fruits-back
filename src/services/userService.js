@@ -3,7 +3,7 @@ const dataService = require("./mongodb");
 const QRCode = require("qrcode");
 const FormData = require("form-data");
 const config = require("../config/config");
-const {  ObjectId } = require('mongodb');
+const { ObjectId } = require('mongodb');
 
 async function handleUser(user, options) {
     try {
@@ -49,8 +49,8 @@ async function handleUser(user, options) {
             if (!dbUser.source) {
                 dbUser.source = source
             }
-            if(!dbUser.referral && Number(source)){
-              dbUser.referral = Number(source);
+            if (!dbUser.referral && Number(source)) {
+                dbUser.referral = Number(source);
             }
         }
         if (pathPoint) {
@@ -134,6 +134,16 @@ async function updatePaymentMethods(id, paymentMethods) {
     }
 }
 
+async function changeCurrency(id, currency) {
+    try {
+        const _id = new ObjectId(id);
+        const result = await dataService.updateDocumentByQuery("users", { _id }, { $set: { currency } });
+        return Boolean(result);
+    } catch (error) {
+        return false;
+    }
+}
+
 
 
 module.exports = {
@@ -142,4 +152,5 @@ module.exports = {
     makeReferral: makeReferral,
     getUser: getUser,
     updatePaymentMethods: updatePaymentMethods,
+    changeCurrency: changeCurrency,
 };

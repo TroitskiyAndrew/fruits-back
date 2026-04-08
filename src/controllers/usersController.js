@@ -104,13 +104,15 @@ const getUserQR = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const { id, paymentMethods } = req.body;
+    const { id, paymentMethods, currency } = req.body;
     if(!id) {
       throw new Error('User id is required');
     }
     let success = false
     if(paymentMethods) {
       success = await userService.updatePaymentMethods(id, paymentMethods);
+    } else if(currency) {
+      success = await userService.changeCurrency(id, currency);      
     }
     res.status(200).send(success);
     return;
