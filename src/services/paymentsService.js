@@ -176,6 +176,16 @@ async function pay(options) {
 async function confirmPayment(paymentId, confirmed) {
     try {
         const update = confirmed ? { confirmed: Date.now() } : { payed: null }
+        if (clientShares.length) {
+            const orders = [...new Set(clientShares.map(share => share.orderId))];
+            for (const orderId of orders) {
+                const unpaidShare = await dataService.getDocumentByQuery('shares', { orderId, paymentId: { $ne: paymentId }, type: 1, confirmed: null });
+                if (!unpaidShare) {
+                    await dataService.updateDocumentByQuery('orders', { _id: new ObjectId(orderId) }, { $set: { 'status.paymentConfirmed': when } });
+                }
+            }
+
+        }
         await dataService.updateDocumentByQuery('payments', { _id: new ObjectId(paymentId) }, { $set: update })
         return true;
     } catch (error) {
