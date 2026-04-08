@@ -115,37 +115,31 @@ async function pay(options) {
         } else if (left < 0) {
             let amountLeft = amount;
             let amountsLeft = {};
-            console.log('1', payment.amounts)
             const newPayment = await dataService.createDocument('payments', { ...payment, payed: null, confirmed: null, amount: payment.amount - amount, amounts: amountsLeft, currency, method })
             for (const curr of CURRENCIES) {
                 amountsLeft[curr] = payment.amounts[curr] || 0;
                 payment.amounts[curr] = 0
                 newPayment.amounts[curr] = 0
             }
-            console.log('2', payment.amounts)
             const shares = await dataService.getDocuments('shares', { paymentId });
             for (const share of shares) {
                 if (amountLeft > 0) {
                     if (amountLeft >= (share.amounts[currency] || 0)) {
                         amountLeft -= (share.amounts[currency] || 0);
-                        console.log('3', payment.amounts)
                         for (const curr of CURRENCIES) {
                             amountsLeft[curr] -= (share.amounts[currency] || 0);
                             payment.amounts[curr] += (share.amounts[currency] || 0);
 
                         }
-                        console.log('4', payment.amounts)
                     } else {
                         const newAmounts = {};
                         const k = amountLeft / share.amounts[currency];
-                        console.log('5', payment.amounts)
                         for (const curr of CURRENCIES) {
                             const accurate = curr === VND ? 1 : 100;
                             newAmounts[curr] = share.amounts[curr] - (Math.round(share.amounts[curr] * k * accurate) / accurate);
                             share.amounts[curr] = share.amounts[curr] - newAmounts[curr];
                             payment.amounts[curr] += share.amounts[curr];
                         }
-                        console.log('6', payment.amounts)
                         await dataService.createDocument('shares', {
                             ...share,
                             paymentId: newPayment.id,
@@ -166,21 +160,17 @@ async function pay(options) {
                 }
                 await dataService.updateDocument("shares", share)
             }
-            console.log('7', payment.amounts)
             await dataService.updateDocumentByQuery('payments', { _id: new ObjectId(newPayment.id) }, { $set: { amounts: newPayment.amounts } })
             payment.amount = amount;
-            console.log(shares)
+            console.log(shares);
         }
-        console.log('8', payment.amounts)
         await dataService.updateDocument('payments', payment);
         await dataService.updateDocuments('shares', { paymentId }, { $set: { payed: when } });
 
         return true;
-
-        return payment;
     } catch (error) {
         console.log(error)
-        return null
+        return false
     }
 }
 async function confirmPayment(paymentId, confirmed) {
