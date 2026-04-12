@@ -18,7 +18,7 @@ async function handleUser(user, options) {
                 if (!sessionId) {
                     return;
                 }
-                dbUser = await dataService.createDocument('users', { user, paymentMethods: { rub: null, vnd: null, usdt: null }, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+                dbUser = await dataService.createDocument('users', { user, paymentMethods: { rub: {bank: null, cash: false}, vnd: {bank: null, cash: false}, usdt: {bank: null, cash: false} }, sources: [], userId, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
             }
             if (sessionId) {
                 const userBySession = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
@@ -33,7 +33,7 @@ async function handleUser(user, options) {
         } else if (sessionId) {
             dbUser = await dataService.getDocumentByQuery('users', { sessionId, userId: 0 });
             if (!dbUser) {
-                dbUser = await dataService.createDocument('users', { user: {}, paymentMethods: { rub: null, vnd: null, usdt: null }, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
+                dbUser = await dataService.createDocument('users', { user: {}, paymentMethods: { rub: {bank: null, cash: false}, vnd: {bank: null, cash: false}, usdt: {bank: null, cash: false} }, sources: [], userId: 0, pressedStart: false, visits: [], path: [], source: source || '', sessionId })
             }
         }
         if (source) {
